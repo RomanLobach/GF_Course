@@ -1,0 +1,26 @@
+# ---- PlatformIO / ESP-IDF build-артефакти ----
+.pio/
+.pioenvs/
+.piolibdeps/
+sdkconfig.old
+dependencies.lock
+
+# ---- VS Code (специфічне для машини, не для команди) ----
+.vscode/.browse.c_cpp.db*
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/ipch/
+
+# ---- macOS системні файли ----
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ---- Тимчасові/резервні файли редакторів ----
+*.swp
+*.swo
+*~
+
+# ---- Python (якщо колись знадобляться допоміжні скрипти) ----
+__pycache__/
+*.pyc
