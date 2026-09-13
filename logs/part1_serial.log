@@ -1,0 +1,8 @@
+single click -> interval 500 ms
+single click -> interval 1000 ms
+single click -> interval 2000 ms
+single click -> interval 250 ms
+double click -> interval 2000 ms
+double click -> interval 1000 ms
+double click -> interval 500 ms
+double click -> interval 250 ms
