@@ -1,0 +1,42 @@
+Decoded with: xtensa-esp32-elf-addr2line -pfiaC -e .pio/build/ttgo-lora32-v2/firmware.elf <addr...>
+(functionally equivalent to the platformio "esp32_exception_decoder" monitor filter /
+dankeboy36.vscode-esp-exception-decoder VSCode extension - both run addr2line on the
+same firmware.elf under the hood)
+
+=== Crash #1: Integer divide by zero ===
+Guru Meditation Error: Core 1 panic'ed (IntegerDivideByZero). Exception was unhandled.
+EXCCAUSE: 0x00000006
+
+Backtrace addresses: 0x400d15f5 0x400d16ad 0x400d33dd
+
+Decoded:
+0x400d15f5: crashDivideByZero() at src/main.cpp:28
+0x400d16ad: loop() at src/main.cpp:97
+0x400d33dd: loopTask(void*) at framework-arduinoespressif32/cores/esp32/main.cpp:50
+
+Root cause:  src/main.cpp:28, function crashDivideByZero()
+             volatile int result = numerator / denominator;   // denominator == 0
+
+
+=== Crash #2: Invalid memory access (bad pointer write) ===
+Guru Meditation Error: Core 1 panic'ed (LoadProhibited). Exception was unhandled.
+EXCCAUSE: 0x0000001c
+EXCVADDR: 0x00000001   (attempted write to address 0x1)
+
+Backtrace addresses: 0x400d1627 0x400d16b4 0x400d33dd
+
+Decoded:
+0x400d1627: crashBadPointer() at src/main.cpp:36
+0x400d16b4: loop() at src/main.cpp:100
+0x400d33dd: loopTask(void*) at framework-arduinoespressif32/cores/esp32/main.cpp:50
+
+Root cause:  src/main.cpp:36, function crashBadPointer()
+             *badPtr = 42;   // badPtr == (volatile int*)0x1, not a valid RAM address
+
+
+Summary
+-------
+| # | Cause                | File          | Line | Function            |
+|---|-----------------------|---------------|------|----------------------|
+| 1 | IntegerDivideByZero   | src/main.cpp  | 28   | crashDivideByZero()  |
+| 2 | LoadProhibited        | src/main.cpp  | 36   | crashBadPointer()    |

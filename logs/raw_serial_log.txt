@@ -1,0 +1,97 @@
+[crash] Triggering integer divide by zero...
+Guru Meditation Error: Core  1 panic'ed (IntegerDivideByZero). Exception was unhandled.
+
+Core  1 register dump:
+PC      : 0x400d15f8  PS      : 0x00060a30  A0      : 0x800d16b0  A1      : 0x3ffb2240  
+A2      : 0x3ffc1c98  A3      : 0x0001c200  A4      : 0x00000078  A5      : 0x0000e100  
+A6      : 0x00000001  A7      : 0x3ffbdb68  A8      : 0x0000000a  A9      : 0x00000000  
+A10     : 0x3ffc1c98  A11     : 0x0000002c  A12     : 0x00000001  A13     : 0x10624dd3  
+A14     : 0x3ffbdb68  A15     : 0x00000000  SAR     : 0x0000001d  EXCCAUSE: 0x00000006  
+EXCVADDR: 0x00000000  LBEG    : 0x40086431  LEND    : 0x40086441  LCOUNT  : 0xffffffff  
+
+
+Backtrace: 0x400d15f5:0x3ffb2240 0x400d16ad:0x3ffb2270 0x400d33dd:0x3ffb2290
+
+
+
+
+ELF file SHA256: 09a1b887e5053c8d
+
+Rebooting...
+ets Jun  8 2016 00:22:57
+
+rst:0xc (SW_CPU_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 188777542, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:1184
+load:0x40078000,len:13232
+load:0x40080400,len:3028
+entry 0x400805e4
+
+=== HW4 crash/debug demo ===
+1 - crash: integer divide by zero
+2 - crash: invalid memory access (bad pointer)
+3 - print partition table (esp_partition API)
+4 - dump raw partition table bytes (low-level flash read)
+Send a digit over Serial to run the corresponding action.
+[crash] Triggering invalid memory access...
+Guru Meditation Error: Core  1 panic'ed (LoadProhibited). Exception was unhandled.
+
+Core  1 register dump:
+PC      : 0x400d162a  PS      : 0x00060a30  A0      : 0x800d16b7  A1      : 0x3ffb2250  
+A2      : 0x3ffc1c98  A3      : 0x0001c200  A4      : 0x00000078  A5      : 0x0000e100  
+A6      : 0x00000001  A7      : 0x3ffbdb68  A8      : 0x00000001  A9      : 0x3ffb2230  
+A10     : 0x3ffc1c98  A11     : 0x0000002b  A12     : 0x00000001  A13     : 0x10624dd3  
+A14     : 0x3ffbdb68  A15     : 0x00000000  SAR     : 0x0000001d  EXCCAUSE: 0x0000001c  
+EXCVADDR: 0x00000001  LBEG    : 0x40086431  LEND    : 0x40086441  LCOUNT  : 0xffffffff  
+
+
+Backtrace: 0x400d1627:0x3ffb2250 0x400d16b4:0x3ffb2270 0x400d33dd:0x3ffb2290
+
+
+
+
+ELF file SHA256: 09a1b887e5053c8d
+
+Rebooting...
+ets Jun  8 2016 00:22:57
+
+rst:0xc (SW_CPU_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 188777542, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:1184
+load:0x40078000,len:13232
+load:0x40080400,len:3028
+entry 0x400805e4
+
+=== HW4 crash/debug demo ===
+1 - crash: integer divide by zero
+2 - crash: invalid memory access (bad pointer)
+3 - print partition table (esp_partition API)
+4 - dump raw partition table bytes (low-level flash read)
+Send a digit over Serial to run the corresponding action.
+[partitions] Iterating partition table via esp_partition API:
+name             type subtype address    size
+nvs              0x01 0x02    0x00009000 20480 bytes
+otadata          0x01 0x00    0x0000e000 8192 bytes
+app0             0x00 0x10    0x00010000 1310720 bytes
+app1             0x00 0x11    0x00150000 1310720 bytes
+spiffs           0x01 0x82    0x00290000 1441792 bytes
+coredump         0x01 0x03    0x003f0000 65536 bytes
+[partitions] Reading 3072 bytes at flash offset 0x8000 (spi_flash_read)
+0000: aa 50 01 02 00 90 00 00 00 50 00 00 6e 76 73 00 
+0010: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+0020: aa 50 01 00 00 e0 00 00 00 20 00 00 6f 74 61 64 
+0030: 61 74 61 00 00 00 00 00 00 00 00 00 00 00 00 00 
+0040: aa 50 00 10 00 00 01 00 00 00 14 00 61 70 70 30 
+0050: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+0060: aa 50 00 11 00 00 15 00 00 00 14 00 61 70 70 31 
+0070: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+0080: aa 50 01 82 00 00 29 00 00 00 16 00 73 70 69 66 
+0090: 66 73 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+00a0: aa 50 01 03 00 00 3f 00 00 00 01 00 63 6f 72 65 
+00b0: 64 75 6d 70 00 00 00 00 00 00 00 00 00 00 00 00 
+00c0: eb eb ff ff ff ff ff ff ff ff ff ff ff ff ff ff 
+00d0: 97 2d ae 2f f8 72 a0 14 2d 60 ba d1 24 c0 66 6b 
