@@ -1,0 +1,54 @@
+[20:46:16.884] [Radio] sent "DT 13/09/2026 17:46:16" | queue->sent latency: 57 ms
+[20:46:16.885] [GPS] date/time queued for TX: 13/09/2026 17:46:16 (sats: 3)
+[20:46:17.899] [Radio] sent "DT 13/09/2026 17:46:17" | queue->sent latency: 57 ms
+[20:46:17.900] [GPS] date/time queued for TX: 13/09/2026 17:46:17 (sats: 3)
+[20:46:19.085] [Radio] sent "DT 13/09/2026 17:46:18" | queue->sent latency: 57 ms
+[20:46:19.086] [GPS] date/time queued for TX: 13/09/2026 17:46:18 (sats: 3)
+[20:46:20.319] [Radio] sent "DT 13/09/2026 17:46:19" | queue->sent latency: 57 ms
+[20:46:20.319] [GPS] date/time queued for TX: 13/09/2026 17:46:19 (sats: 3)
+[20:46:21.646] [Radio] sent "DT 13/09/2026 17:46:21" | queue->sent latency: 57 ms
+[20:46:21.646] [GPS] date/time queued for TX: 13/09/2026 17:46:21 (sats: 3)
+[20:46:22.665] [Radio] sent "DT 13/09/2026 17:46:22" | queue->sent latency: 57 ms
+[20:46:22.665] [GPS] date/time queued for TX: 13/09/2026 17:46:22 (sats: 3)
+[20:46:23.421] [Main] single click -> BUTTON SINGLE
+[20:46:23.470] [Radio] sent "BUTTON SINGLE" | queue->sent latency: 408 ms
+[20:46:23.760] [Radio] sent "DT 13/09/2026 17:46:23" | queue->sent latency: 57 ms
+[20:46:23.761] [GPS] date/time queued for TX: 13/09/2026 17:46:23 (sats: 3)
+[20:46:25.005] [Radio] sent "DT 13/09/2026 17:46:24" | queue->sent latency: 58 ms
+[20:46:25.005] [GPS] date/time queued for TX: 13/09/2026 17:46:24 (sats: 3)
+[20:46:25.301] [Main] double click -> BUTTON DOUBLE
+[20:46:25.350] [Radio] sent "BUTTON DOUBLE" | queue->sent latency: 278 ms
+[20:46:26.112] [Radio] sent "DT 13/09/2026 17:46:25" | queue->sent latency: 57 ms
+[20:46:26.113] [GPS] date/time queued for TX: 13/09/2026 17:46:25 (sats: 3)
+[20:46:27.138] [Radio] sent "DT 13/09/2026 17:46:26" | queue->sent latency: 57 ms
+[20:46:27.139] [GPS] date/time queued for TX: 13/09/2026 17:46:26 (sats: 3)
+[20:46:28.435] [Radio] sent "DT 13/09/2026 17:46:28" | queue->sent latency: 57 ms
+[20:46:28.436] [GPS] date/time queued for TX: 13/09/2026 17:46:28 (sats: 3)
+[20:46:29.767] [Radio] sent "DT 13/09/2026 17:46:29" | queue->sent latency: 57 ms
+[20:46:29.768] [GPS] date/time queued for TX: 13/09/2026 17:46:29 (sats: 3)
+[20:46:30.974] [Radio] sent "DT 13/09/2026 17:46:30" | queue->sent latency: 57 ms
+[20:46:30.975] [GPS] date/time queued for TX: 13/09/2026 17:46:30 (sats: 3)
+[20:46:32.049] [Radio] sent "DT 13/09/2026 17:46:31" | queue->sent latency: 57 ms
+[20:46:32.050] [GPS] date/time queued for TX: 13/09/2026 17:46:31 (sats: 3)
+[20:46:33.251] [Radio] sent "DT 13/09/2026 17:46:32" | queue->sent latency: 57 ms
+[20:46:33.251] [GPS] date/time queued for TX: 13/09/2026 17:46:32 (sats: 3)
+[20:46:34.474] [Radio] sent "DT 13/09/2026 17:46:33" | queue->sent latency: 57 ms
+[20:46:34.475] [GPS] date/time queued for TX: 13/09/2026 17:46:33 (sats: 3)
+[20:46:35.559] [Radio] sent "DT 13/09/2026 17:46:35" | queue->sent latency: 57 ms
+[20:46:35.560] [GPS] date/time queued for TX: 13/09/2026 17:46:35 (sats: 3)
+[20:46:36.949] [Radio] sent "DT 13/09/2026 17:46:36" | queue->sent latency: 57 ms
+[20:46:36.950] [GPS] date/time queued for TX: 13/09/2026 17:46:36 (sats: 3)
+[20:46:38.151] [Radio] sent "DT 13/09/2026 17:46:37" | queue->sent latency: 57 ms
+[20:46:38.152] [GPS] date/time queued for TX: 13/09/2026 17:46:37 (sats: 3)
+[20:46:39.218] [Radio] sent "DT 13/09/2026 17:46:38" | queue->sent latency: 57 ms
+[20:46:39.219] [GPS] date/time queued for TX: 13/09/2026 17:46:38 (sats: 3)
+[20:46:40.512] [Radio] sent "DT 13/09/2026 17:46:40" | queue->sent latency: 57 ms
+[20:46:40.512] [GPS] date/time queued for TX: 13/09/2026 17:46:40 (sats: 3)
+[20:46:41.671] [Radio] sent "DT 13/09/2026 17:46:41" | queue->sent latency: 57 ms
+[20:46:41.671] [GPS] date/time queued for TX: 13/09/2026 17:46:41 (sats: 3)
+[20:46:43.001] [Radio] sent "DT 13/09/2026 17:46:42" | queue->sent latency: 57 ms
+[20:46:43.001] [GPS] date/time queued for TX: 13/09/2026 17:46:42 (sats: 3)
+[20:46:44.218] [Radio] sent "DT 13/09/2026 17:46:43" | queue->sent latency: 57 ms
+[20:46:44.219] [GPS] date/time queued for TX: 13/09/2026 17:46:43 (sats: 3)
+[20:46:45.657] [Radio] sent "DT 13/09/2026 17:46:43" | queue->sent latency: 57 ms
+[20:46:45.658] [GPS] date/time queued for TX: 13/09/2026 17:46:43 (sats: 0)
