@@ -1,0 +1,13 @@
+.pio
+.pioenvs
+.piolibdeps
+.vscode
+.DS_Store
+
+.idea
+
+.claude
+.claudeignore
+.claude/CLAUDE.md
+
+include/secrets.h

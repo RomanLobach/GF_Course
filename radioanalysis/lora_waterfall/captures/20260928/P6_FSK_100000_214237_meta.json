@@ -1,0 +1,21 @@
+{
+  "profile": "P6_FSK_100000",
+  "title": "Профіль 6 — FSK 100 кбіт/с, девіація 100 кГц",
+  "timestamp": "2026-09-28 21:42:37",
+  "center_hz": 868550000.0,
+  "signal_hz": 868300000.0,
+  "rate": 2400000.0,
+  "gain": 0.0,
+  "clipping_percent": 0.0,
+  "noise_floor_db": 8.8,
+  "segments_found": 9,
+  "expected_airtime_ms": 6.0,
+  "snr_db": 38.8,
+  "packet_start_s": 5.7737,
+  "packet_ms": 7.7,
+  "packet_matches_expected": true,
+  "files": {
+    "overview": "captures/20260928/P6_FSK_100000_214237_overview.png",
+    "detail": "captures/20260928/P6_FSK_100000_214237_detail.png"
+  }
+}

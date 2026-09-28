@@ -1,0 +1,17 @@
+{
+  "profile": "S_SERVICE_LoRa_SF10_BW125",
+  "title": "Службовий канал — LoRa SF10 / BW125",
+  "timestamp": "2026-09-28 21:46:54",
+  "center_hz": 869775000.0,
+  "signal_hz": 869525000.0,
+  "rate": 2400000.0,
+  "gain": 0.0,
+  "clipping_percent": 0.0,
+  "noise_floor_db": 4.9,
+  "segments_found": 0,
+  "expected_airtime_ms": 207.0,
+  "snr_db": 0.0,
+  "files": {
+    "overview": "captures/20260928/S_SERVICE_LoRa_SF10_BW125_214654_overview.png"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "profile": "P3_LoRa_SF12_BW125",
+  "title": "Профіль 3 — LoRa SF12 / BW125",
+  "timestamp": "2026-09-28 21:39:19",
+  "center_hz": 869775000.0,
+  "signal_hz": 869525000.0,
+  "rate": 2400000.0,
+  "gain": 0.0,
+  "clipping_percent": 0.0,
+  "noise_floor_db": 47.3,
+  "segments_found": 0,
+  "expected_airtime_ms": 2790.0,
+  "snr_db": 0.0,
+  "files": {
+    "overview": "captures/20260928/P3_LoRa_SF12_BW125_213919_overview.png"
+  }
+}

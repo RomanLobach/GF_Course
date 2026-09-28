@@ -1,0 +1,21 @@
+{
+  "profile": "P1_LoRa_SF6_BW125",
+  "title": "Профіль 1 — LoRa SF6 / BW125",
+  "timestamp": "2026-09-28 21:31:57",
+  "center_hz": 869775000.0,
+  "signal_hz": 869525000.0,
+  "rate": 2400000.0,
+  "gain": 0.0,
+  "clipping_percent": 0.0,
+  "noise_floor_db": 5.0,
+  "segments_found": 12,
+  "expected_airtime_ms": 67.0,
+  "snr_db": 41.1,
+  "packet_start_s": 2.4226,
+  "packet_ms": 67.4,
+  "packet_matches_expected": true,
+  "files": {
+    "overview": "captures/20260928/P1_LoRa_SF6_BW125_213157_overview.png",
+    "detail": "captures/20260928/P1_LoRa_SF6_BW125_213157_detail.png"
+  }
+}
