@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LoRa практикум — ПК-переглядач логів</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0; padding:0;}
+  body{
+    padding:32px 16px; background:#F4F5F2;
+    font-family:'IBM Plex Mono','SF Mono',Consolas,monospace;
+    display:flex; justify-content:center;
+  }
+  .wrap{
+    --bg-page:#EDF1EE; --card-bg:#E2E8E3; --ink:#16211D; --rule:#9FB0A8;
+    --grid:rgba(22,33,29,0.045); --ok:#2F9E6E; --warn:#C98A2E; --bad:#C0463C;
+    --base-tint:#DCE6E0; --rover-tint:#E4E0EC;
+    background-color:var(--bg-page); color:var(--ink);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:22px 22px;
+    border-radius:14px; padding:28px 24px; box-sizing:border-box;
+    max-width:1100px; width:100%;
+  }
+  .wrap *{box-sizing:border-box;}
+  .eyebrow{font-size:11px; letter-spacing:1.5px; opacity:0.55; text-transform:uppercase;}
+  .title{font-size:18px; font-weight:600; margin:4px 0 20px;}
+  .panel{background:var(--card-bg); border:1px solid var(--rule); border-radius:10px; padding:14px 16px; margin-bottom:16px;}
+  .conn-row{display:flex; flex-wrap:wrap; align-items:end; gap:14px;}
+  .field{display:flex; flex-direction:column; gap:4px;}
+  .field label{font-size:10px; letter-spacing:0.5px; opacity:0.65; text-transform:uppercase;}
+  .field input{
+    font-family:inherit; font-size:13px; padding:6px 8px; width:150px;
+    border:1px solid var(--rule); border-radius:4px; background:#fff; color:var(--ink);
+  }
+  button{
+    font-family:inherit; font-size:12px; font-weight:600; letter-spacing:0.3px;
+    padding:8px 14px; border-radius:4px; border:1px solid var(--rule); background:var(--ink);
+    color:var(--bg-page); cursor:pointer;
+  }
+  button:disabled{opacity:0.4; cursor:default;}
+  button.secondary{background:transparent; color:var(--ink);}
+  .status{font-size:11px; opacity:0.7; margin-top:10px; min-height:14px;}
+
+  .empty-hint{
+    text-align:center; opacity:0.55; padding:36px 10px; font-style:normal;
+    border:1px solid var(--rule); border-radius:10px; background:#fff;
+  }
+
+  .session-card{
+    border:1px solid var(--rule); border-radius:10px; background:#fff;
+    margin-bottom:18px; overflow:hidden;
+  }
+  .session-head{
+    display:flex; align-items:center; gap:10px;
+    background:var(--card-bg); padding:9px 14px; font-size:12px; font-weight:600;
+    border-bottom:1px solid var(--rule);
+  }
+  .session-head .sid{font-size:13px;}
+  .session-head .hint{font-weight:400; opacity:0.6; font-size:10.5px;}
+
+  .col-heads{display:grid; grid-template-columns:1fr 1fr;}
+  .col-heads div{
+    padding:6px 14px; font-size:10px; letter-spacing:0.5px; text-transform:uppercase; opacity:0.6;
+    border-bottom:1px solid var(--rule);
+  }
+  .col-heads div:first-child{border-right:1px solid var(--rule);}
+
+  .timeline{display:grid; grid-template-columns:1fr 1fr;}
+  .cell{
+    padding:8px 14px; font-size:12px; border-bottom:1px solid rgba(22,33,29,0.08);
+    display:flex; flex-direction:column; gap:2px; min-height:36px; justify-content:center;
+  }
+  .cell.base{border-right:1px solid var(--rule); background:var(--base-tint);}
+  .cell.rover{background:var(--rover-tint);}
+  .cell.empty{background:transparent;}
+  .evt-time{font-size:10px; opacity:0.55;}
+  .evt-signal{font-size:10.5px; opacity:0.65;}
+  .evt-label{font-weight:600;}
+  .evt-ok .evt-label{color:var(--ok);}
+  .evt-fail .evt-label{color:var(--bad);}
+  .evt-manual .evt-label{color:var(--warn);}
+  .evt-measdone .evt-label{opacity:0.75;}
+
+  .meas-block{
+    grid-column:1 / -1; background:#FBFAF6; border-top:2px solid var(--rule); border-bottom:2px solid var(--rule);
+    padding:10px 14px 12px;
+  }
+  .meas-block .meas-title{font-size:11px; font-weight:600; letter-spacing:0.3px; text-transform:uppercase; opacity:0.7; margin-bottom:6px;}
+  .meas-row{
+    display:flex; gap:14px; font-size:12px; padding:3px 0; align-items:baseline;
+    border-bottom:1px dashed rgba(22,33,29,0.12);
+  }
+  .meas-row:last-child{border-bottom:none;}
+  .meas-row .cfg{font-weight:600; width:90px; flex:none;}
+  .meas-row .stat{opacity:0.85;}
+  .meas-row .integ{margin-left:auto; font-weight:600;}
+  .meas-row.warn .integ{color:var(--warn);}
+  .meas-row.bad .integ{color:var(--bad);}
+  .meas-row.ok .integ{color:var(--ok);}
+
+  .foot-row{display:flex; justify-content:space-between; align-items:center; margin-top:14px;}
+  .manage-row{display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; align-items:center;}
+  button.danger{background:var(--bad); border-color:var(--bad);}
+  .dev-info{font-size:11px; opacity:0.75;}
+  .test-block{grid-column:1 / -1; background:#F6F4FB; border-top:1px dashed var(--rule); border-bottom:1px dashed var(--rule); padding:10px 14px 12px;}
+  .hint{font-size:10.5px; opacity:0.55;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="eyebrow">LoRa практикум · ПК-переглядач</div>
+  <div class="title">Зведений лог — База / Ровер</div>
+
+  <div class="panel">
+    <div class="conn-row">
+      <div class="field">
+        <label for="ip-base">IP бази</label>
+        <input id="ip-base" type="text" placeholder="192.168.1.47">
+      </div>
+      <div class="field">
+        <label for="ip-rover">IP ровера</label>
+        <input id="ip-rover" type="text" placeholder="192.168.1.52">
+      </div>
+      <button id="load-btn">Завантажити</button>
+      <button class="secondary" id="check-btn">Перевірити з'єднання</button>
+    </div>
+    <div class="manage-row">
+      <button class="secondary" id="erase-base-btn" disabled>Стерти логи бази</button>
+      <button class="secondary" id="erase-rover-btn" disabled>Стерти логи ровера</button>
+      <button class="danger" id="reset-btn" disabled>Скинути ID і стерти логи на обох</button>
+      <span class="dev-info" id="dev-info"></span>
+    </div>
+    <div class="status" id="status">IP береться з екрана пристрою після вибору «Логи → Передати по Wi-Fi». Хардбіт у лозі не пишеться — лише події сесії, пакети вимірювання й підсумки тесту частот.</div>
+  </div>
+
+  <div id="sessions"></div>
+
+  <div class="foot-row">
+    <span class="hint">Сесії згруповано по ID; рядки Бази й Ровера зіставлені по часу · блок вимірювання відмежований рамкою</span>
+    <button class="secondary" id="export-btn" disabled>Export CSV (сирі записи)</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  // Column schema matches the CSV the firmware serves from GET /logs.csv
+  // (FlashLog::csvHeader() in src/FlashLog.h): session_id,seq,direction,type,
+  // config,session_time,size_bytes,rssi_dbm,snr_db,status,received,event,
+  // tx_time_ms,burst_sent,burst_recv. "type" is EVT (session event, see
+  // LogEventKind in src/FlashLog.h), BENCH (one MEAS test packet) or TEST (one
+  // frequency-test burst summary: burst_sent/burst_recv filled, rssi/snr are
+  // burst averages on the Rover, tx_time_ms the average on the Base).
+  // tx_time_ms is the measured on-air duration, populated only by Base (the
+  // side that transmits).
+
+  // Sync-event rows on Base and Rover are logged independently, close in time
+  // but never identical - merge rows from both sides into one line whenever
+  // they land within this tolerance (half the heartbeat interval, Config.h).
+  const EVENT_MERGE_TOLERANCE_MS = 5000;
+
+  const RAW_COLUMNS = [
+    { key:'source',     label:'Джерело' },
+    { key:'sessionId',  label:'Сесія ID' },
+    { key:'seq',        label:'№' },
+    { key:'direction',  label:'Напрям' },
+    { key:'type',       label:'Тип' },
+    { key:'config',     label:'Конфігурація' },
+    { key:'sessionTime',label:'Час сесії' },
+    { key:'size',       label:'Розмір, байт' },
+    { key:'rssi',       label:'RSSI, дБм' },
+    { key:'snr',        label:'SNR, дБ' },
+    { key:'status',     label:'Статус' },
+    { key:'received',   label:'Прийнято' },
+    { key:'event',      label:'Подія' },
+    { key:'txTimeMs',   label:'Час передачі, мс' },
+    { key:'burstSent',  label:'Пачка: відправлено' },
+    { key:'burstRecv',  label:'Пачка: прийнято' },
+  ];
+
+  const EVENT_LABELS = {
+    SYNC_OK:     { text:'Синхронізовано',            cls:'evt-ok' },
+    SYNC_FAIL:   { text:'Синхронізація невдала',      cls:'evt-fail' },
+    MANUAL_STOP: { text:'Перервано вручну',           cls:'evt-manual' },
+    MEAS_DONE:   { text:'Вимірювання завершено',      cls:'evt-measdone' },
+    MEAS_STOP:   { text:'Вимірювання зупинено',       cls:'evt-manual' },
+  };
+
+  function parseSessionTimeMs(s) {
+    const m = /^T\+(\d+):(\d{2}):(\d{2})$/.exec(s || '');
+    if (!m) return 0;
+    return ((parseInt(m[1], 10) * 3600) + parseInt(m[2], 10) * 60 + parseInt(m[3], 10)) * 1000;
+  }
+
+  function parseCsv(text, source) {
+    const lines = text.split(/\r?\n/).filter(l => l.length > 0);
+    const rows = [];
+    for (let i = 1; i < lines.length; i++) { // skip header row
+      const p = lines[i].split(',');
+      if (p.length < 12) continue;
+      const [sessionId, seq, direction, type, config, sessionTime, size, rssi, snr, status, received, event, txTimeMs, burstSent, burstRecv] = p;
+      rows.push({
+        source,
+        sessionId,
+        seq: parseInt(seq, 10),
+        direction,
+        recordKind: type, // 'EVT' | 'BENCH' | 'TEST'
+        config,
+        sessionTime,
+        sessionTimeMsNum: parseSessionTimeMs(sessionTime),
+        size: size === '' ? null : parseInt(size, 10),
+        rssi: rssi === '' ? null : parseFloat(rssi),
+        snr: snr === '' ? null : parseFloat(snr),
+        status,
+        received: received === '' ? null : (received === '1'),
+        event: event || '',
+        txTimeMs: (txTimeMs === undefined || txTimeMs === '') ? null : parseFloat(txTimeMs),
+        burstSent: (burstSent === undefined || burstSent === '') ? null : parseInt(burstSent, 10),
+        burstRecv: (burstRecv === undefined || burstRecv === '') ? null : parseInt(burstRecv, 10),
+      });
+    }
+    return rows;
+  }
+
+  async function fetchDeviceLog(ip, source) {
+    if (!ip) return [];
+    const resp = await fetch('http://' + ip + '/logs.csv');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    return parseCsv(await resp.text(), source);
+  }
+
+  let baseRows = [];
+  let roverRows = [];
+
+  // --- grouping/merging: raw records -> one card per
+  // session id, sync events matched Base/Rover by time, bench packets
+  // aggregated per configuration into a single delimited measurement block. ---
+
+  function evtRowHtml(row) {
+    if (!row) return '<div class="cell empty"></div>';
+    const meta = EVENT_LABELS[row.event] || { text: row.event, cls:'' };
+    const signal = (row.rssi !== null || row.snr !== null)
+      ? '<span class="evt-signal">' +
+        (row.rssi !== null ? 'RSSI: ' + row.rssi + ' дБм' : '') +
+        (row.rssi !== null && row.snr !== null ? ', ' : '') +
+        (row.snr !== null ? 'SNR: ' + row.snr.toFixed(1) + ' дБ' : '') +
+        '</span>'
+      : '';
+    return '<div class="cell ' + (row.source === 'База' ? 'base' : 'rover') + ' ' + meta.cls + '">' +
+      '<span class="evt-time">' + row.sessionTime + '</span>' +
+      '<span class="evt-label">' + meta.text + '</span>' +
+      signal +
+      '</div>';
+  }
+
+  function mergeEvents(baseEvents, roverEvents) {
+    let i = 0, j = 0;
+    const merged = [];
+    while (i < baseEvents.length || j < roverEvents.length) {
+      const b = baseEvents[i], r = roverEvents[j];
+      if (b && r && Math.abs(b.sessionTimeMsNum - r.sessionTimeMsNum) <= EVENT_MERGE_TOLERANCE_MS) {
+        merged.push({ base: b, rover: r, t: Math.min(b.sessionTimeMsNum, r.sessionTimeMsNum) });
+        i++; j++;
+      } else if (b && (!r || b.sessionTimeMsNum <= r.sessionTimeMsNum)) {
+        merged.push({ base: b, rover: null, t: b.sessionTimeMsNum });
+        i++;
+      } else {
+        merged.push({ base: null, rover: r, t: r.sessionTimeMsNum });
+        j++;
+      }
+    }
+    return merged;
+  }
+
+  function buildMeasurementSummary(sessionId) {
+    const baseBench = baseRows.filter(r => r.sessionId === sessionId && r.recordKind === 'BENCH' && r.direction === 'TX');
+    const roverBench = roverRows.filter(r => r.sessionId === sessionId && r.recordKind === 'BENCH' && r.direction === 'RX');
+    if (baseBench.length === 0 && roverBench.length === 0) return null;
+
+    const configs = new Map(); // label -> {sent, received, minTime, rssiSum, rssiCount, snrSum, snrCount, txTimeSum, txTimeCount}
+    baseBench.forEach(r => {
+      const c = configs.get(r.config) || { sent: 0, received: 0, minTime: Infinity, rssiSum: 0, rssiCount: 0, snrSum: 0, snrCount: 0, txTimeSum: 0, txTimeCount: 0 };
+      c.sent++;
+      c.minTime = Math.min(c.minTime, r.sessionTimeMsNum);
+      // Only Base measures its own transmit duration (it's the side that
+      // actually transmits) - a packet the radio never
+      // finished sending has no txTimeMs.
+      if (r.txTimeMs !== null) { c.txTimeSum += r.txTimeMs; c.txTimeCount++; }
+      configs.set(r.config, c);
+    });
+    roverBench.forEach(r => {
+      const c = configs.get(r.config) || { sent: 0, received: 0, minTime: Infinity, rssiSum: 0, rssiCount: 0, snrSum: 0, snrCount: 0, txTimeSum: 0, txTimeCount: 0 };
+      if (r.received) c.received++;
+      // Only the Rover ever receives during MEASURING, so signal quality per
+      // config can only be computed from its RX records (base only transmits).
+      if (r.rssi !== null) { c.rssiSum += r.rssi; c.rssiCount++; }
+      if (r.snr !== null) { c.snrSum += r.snr; c.snrCount++; }
+      c.minTime = Math.min(c.minTime, r.sessionTimeMsNum);
+      configs.set(r.config, c);
+    });
+
+    return Array.from(configs.entries())
+      .sort((a, b) => a[1].minTime - b[1].minTime)
+      .map(([config, v]) => ({
+        config,
+        sent: v.sent,
+        received: v.received,
+        integrity: v.sent > 0 ? Math.round((v.received / v.sent) * 100) : null,
+        avgRssi: v.rssiCount > 0 ? Math.round(v.rssiSum / v.rssiCount) : null,
+        avgSnr: v.snrCount > 0 ? (v.snrSum / v.snrCount) : null,
+        avgTxTimeMs: v.txTimeCount > 0 ? (v.txTimeSum / v.txTimeCount) : null,
+      }));
+  }
+
+  function measBlockHtml(summary) {
+    if (!summary) return '';
+    const rows = summary.map(s => {
+      const cls = s.integrity === null ? '' : (s.integrity >= 100 ? 'ok' : s.integrity >= 50 ? 'warn' : 'bad');
+      const integ = s.integrity === null ? '—' : s.integrity + '%';
+      const signal = (s.avgRssi !== null || s.avgSnr !== null)
+        ? '<span class="stat">' +
+          (s.avgRssi !== null ? 'RSSI: ' + s.avgRssi + ' дБм (сер.)' : '') +
+          (s.avgRssi !== null && s.avgSnr !== null ? ', ' : '') +
+          (s.avgSnr !== null ? 'SNR: ' + s.avgSnr.toFixed(1) + ' дБ (сер.)' : '') +
+          '</span>'
+        : '';
+      const txTime = s.avgTxTimeMs !== null
+        ? '<span class="stat">час передачі: ' + s.avgTxTimeMs.toFixed(1) + ' мс (сер.)</span>'
+        : '';
+      return '<div class="meas-row ' + cls + '">' +
+        '<span class="cfg">' + s.config + '</span>' +
+        '<span class="stat">відправлено: ' + s.sent + ', прийнято: ' + s.received + '</span>' +
+        signal +
+        txTime +
+        '<span class="integ">цілісність: ' + integ + '</span>' +
+        '</div>';
+    }).join('');
+    return '<div class="meas-block"><div class="meas-title">Вимірювання (6 конфігурацій)</div>' + rows + '</div>';
+  }
+
+  // TEST summaries are secondary data - one aggregated line per profile,
+  // shown in a separate block so they never mix with the main MEAS results.
+  function buildTestSummary(sessionId) {
+    const roverTest = roverRows.filter(r => r.sessionId === sessionId && r.recordKind === 'TEST');
+    const baseTest = baseRows.filter(r => r.sessionId === sessionId && r.recordKind === 'TEST');
+    if (roverTest.length === 0 && baseTest.length === 0) return null;
+    const byCfg = new Map();
+    const get = cfg => byCfg.get(cfg) || { bursts: 0, sent: 0, recv: 0, rssiSum: 0, rssiCount: 0, snrSum: 0, snrCount: 0, txSum: 0, txCount: 0 };
+    roverTest.forEach(r => {
+      const c = get(r.config);
+      c.bursts++;
+      c.sent += r.burstSent || 0;
+      c.recv += r.burstRecv || 0;
+      if (r.rssi !== null) { c.rssiSum += r.rssi; c.rssiCount++; }
+      if (r.snr !== null) { c.snrSum += r.snr; c.snrCount++; }
+      byCfg.set(r.config, c);
+    });
+    baseTest.forEach(r => {
+      const c = get(r.config);
+      if (r.txTimeMs !== null) { c.txSum += r.txTimeMs; c.txCount++; }
+      if (roverTest.length === 0) { c.bursts++; c.sent += r.burstSent || 0; c.recv += r.burstRecv || 0; }
+      byCfg.set(r.config, c);
+    });
+    return Array.from(byCfg.entries()).map(([config, v]) => ({
+      config, bursts: v.bursts, sent: v.sent, recv: v.recv,
+      integrity: v.sent > 0 ? Math.round(v.recv / v.sent * 100) : null,
+      avgRssi: v.rssiCount ? Math.round(v.rssiSum / v.rssiCount) : null,
+      avgSnr: v.snrCount ? v.snrSum / v.snrCount : null,
+      avgTx: v.txCount ? v.txSum / v.txCount : null,
+    }));
+  }
+
+  function testBlockHtml(summary) {
+    if (!summary) return '';
+    const rows = summary.map(s => {
+      const cls = s.integrity === null ? '' : (s.integrity >= 100 ? 'ok' : s.integrity >= 50 ? 'warn' : 'bad');
+      return '<div class="meas-row ' + cls + '">' +
+        '<span class="cfg">' + s.config + '</span>' +
+        '<span class="stat">пачок: ' + s.bursts + ', відправлено: ' + s.sent + ', прийнято: ' + s.recv + '</span>' +
+        (s.avgRssi !== null ? '<span class="stat">RSSI: ' + s.avgRssi + ' дБм (сер.)' + (s.avgSnr !== null ? ', SNR: ' + s.avgSnr.toFixed(1) + ' дБ' : '') + '</span>' : '') +
+        (s.avgTx !== null ? '<span class="stat">час передачі: ' + s.avgTx.toFixed(1) + ' мс (сер.)</span>' : '') +
+        '<span class="integ">' + (s.integrity === null ? '—' : s.integrity + '%') + '</span>' +
+        '</div>';
+    }).join('');
+    return '<div class="test-block"><div class="meas-title">Тест частот (підсумки пачок)</div>' + rows + '</div>';
+  }
+
+  function renderSessionCard(sessionId) {
+    const baseEvents = baseRows.filter(r => r.sessionId === sessionId && r.recordKind === 'EVT')
+      .sort((a, b) => a.sessionTimeMsNum - b.sessionTimeMsNum);
+    const roverEvents = roverRows.filter(r => r.sessionId === sessionId && r.recordKind === 'EVT')
+      .sort((a, b) => a.sessionTimeMsNum - b.sessionTimeMsNum);
+    const merged = mergeEvents(baseEvents, roverEvents);
+    const summary = buildMeasurementSummary(sessionId);
+
+    let measInserted = summary === null; // already "inserted" (nothing to insert)
+    const rowsHtml = merged.map(m => {
+      const isMeasDone = (m.base && m.base.event === 'MEAS_DONE') || (m.rover && m.rover.event === 'MEAS_DONE');
+      let out = '';
+      if (isMeasDone && !measInserted) {
+        out += measBlockHtml(summary);
+        measInserted = true;
+      }
+      out += evtRowHtml(m.base) + evtRowHtml(m.rover);
+      return out;
+    }).join('');
+
+    const tailMeasBlock = (measInserted ? '' : measBlockHtml(summary)) + testBlockHtml(buildTestSummary(sessionId));
+
+    return '<div class="session-card">' +
+      '<div class="session-head"><span class="sid">Сесія ' + sessionId + '</span>' +
+        '<span class="hint">' + baseEvents.length + ' подій · База, ' + roverEvents.length + ' подій · Ровер' + '</span></div>' +
+      '<div class="col-heads"><div>База</div><div>Ровер</div></div>' +
+      '<div class="timeline">' + rowsHtml + tailMeasBlock + '</div>' +
+      '</div>';
+  }
+
+  function renderSessions() {
+    const container = document.getElementById('sessions');
+    const ids = new Set();
+    baseRows.forEach(r => ids.add(r.sessionId));
+    roverRows.forEach(r => ids.add(r.sessionId));
+
+    if (ids.size === 0) {
+      container.innerHTML = '<div class="empty-hint">Немає даних — натисни «Завантажити»</div>';
+      return;
+    }
+
+    const sorted = Array.from(ids).sort((a, b) => parseInt(b, 10) - parseInt(a, 10)); // newest session first
+    container.innerHTML = sorted.map(renderSessionCard).join('');
+  }
+
+  async function loadLogs() {
+    const baseIp = document.getElementById('ip-base').value.trim();
+    const roverIp = document.getElementById('ip-rover').value.trim();
+    const statusEl = document.getElementById('status');
+    const loadBtn = document.getElementById('load-btn');
+
+    if (!baseIp && !roverIp) {
+      statusEl.textContent = 'Вкажи IP хоча б одного пристрою.';
+      return;
+    }
+
+    statusEl.textContent = 'Завантаження…';
+    loadBtn.disabled = true;
+
+    try {
+      const results = await Promise.allSettled([
+        fetchDeviceLog(baseIp, 'База'),
+        fetchDeviceLog(roverIp, 'Ровер'),
+      ]);
+
+      const errors = [];
+      baseRows = results[0].status === 'fulfilled' ? results[0].value : (errors.push('не вдалось завантажити з бази (' + results[0].reason.message + ')'), []);
+      roverRows = results[1].status === 'fulfilled' ? results[1].value : (errors.push('не вдалось завантажити з ровера (' + results[1].reason.message + ')'), []);
+
+      statusEl.textContent = 'Завантажено: ' + baseRows.length + ' записів з бази, ' + roverRows.length + ' записів з ровера.' +
+        (errors.length ? ' ' + errors.join('; ') + '.' : '');
+      document.getElementById('export-btn').disabled = (baseRows.length + roverRows.length) === 0;
+      renderSessions();
+      checkDevices();
+    } finally {
+      loadBtn.disabled = false;
+    }
+  }
+
+  // --- device management ---
+  const deviceOk = { base: false, rover: false };
+
+  function ipOf(which) {
+    return document.getElementById(which === 'base' ? 'ip-base' : 'ip-rover').value.trim();
+  }
+
+  async function fetchInfo(ip) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 3000);
+    try {
+      const resp = await fetch('http://' + ip + '/info', { signal: ctrl.signal });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return await resp.json();
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function updateManageButtons() {
+    document.getElementById('erase-base-btn').disabled = !deviceOk.base;
+    document.getElementById('erase-rover-btn').disabled = !deviceOk.rover;
+    // The id reset only makes sense on both devices at once - otherwise the device that
+    // wasn't reset would pull the old numbering back at the next sync.
+    document.getElementById('reset-btn').disabled = !(deviceOk.base && deviceOk.rover);
+  }
+
+  async function checkDevices() {
+    const infoEl = document.getElementById('dev-info');
+    const parts = [];
+    for (const which of ['base', 'rover']) {
+      const ip = ipOf(which);
+      deviceOk[which] = false;
+      if (!ip) continue;
+      try {
+        const info = await fetchInfo(ip);
+        deviceOk[which] = true;
+        parts.push((which === 'base' ? 'База' : 'Ровер') + ': ID ' + String(info.sessionId).padStart(4, '0') +
+          ', записів ' + info.records + ', лог ' + info.fillPercent + '%');
+      } catch (e) {
+        parts.push((which === 'base' ? 'База' : 'Ровер') + ': немає зв\'язку');
+      }
+    }
+    infoEl.textContent = parts.join(' · ');
+    updateManageButtons();
+  }
+
+  async function postTo(ip, path) {
+    const resp = await fetch('http://' + ip + path, { method: 'POST' }); // CORS "simple" request - no preflight
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  }
+
+  async function eraseDevice(which) {
+    const name = which === 'base' ? 'бази' : 'ровера';
+    if (!confirm('Стерти всі логи ' + name + '? ID сесії не зміниться.')) return;
+    const statusEl = document.getElementById('status');
+    try {
+      await postTo(ipOf(which), '/erase-logs');
+      statusEl.textContent = 'Логи ' + name + ' стерто.';
+    } catch (e) {
+      statusEl.textContent = 'Не вдалось стерти логи ' + name + ' (' + e.message + ').';
+    }
+    await checkDevices();
+  }
+
+  async function resetBoth() {
+    await checkDevices();
+    if (!(deviceOk.base && deviceOk.rover)) {
+      document.getElementById('status').textContent = 'Скидання ID можливе лише коли обидва пристрої на зв\'язку.';
+      return;
+    }
+    if (!confirm('Стерти логи і скинути ID сесій до 0000 на ОБОХ пристроях?')) return;
+    const results = await Promise.allSettled([postTo(ipOf('base'), '/reset-session'), postTo(ipOf('rover'), '/reset-session')]);
+    const okBase = results[0].status === 'fulfilled';
+    const okRover = results[1].status === 'fulfilled';
+    document.getElementById('status').textContent = (okBase && okRover)
+      ? 'ID скинуто й логи стерто на обох пристроях.'
+      : 'Скидання: база — ' + (okBase ? 'так' : 'ні') + ', ровер — ' + (okRover ? 'так' : 'ні') +
+        '. Дублікатів ID не буде: при синхронізації пристрій зі скинутим ID візьме більший ID партнера.';
+    await checkDevices();
+  }
+
+  function exportCsv() {
+    const allRows = baseRows.concat(roverRows);
+    // RFC 4180: labels like "Розмір, байт" contain commas - quote any such field, otherwise the
+    // header splits into extra columns and every spreadsheet/script misreads the file.
+    const q = v => /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+    const header = RAW_COLUMNS.map(c => q(c.label)).join(',');
+    const lines = allRows.map(r => RAW_COLUMNS.map(c => {
+      let v = r[c.key === 'type' ? 'recordKind' : c.key];
+      if (c.key === 'received') v = r.received === null ? '' : (r.received ? '1' : '0');
+      return q((v === null || v === undefined) ? '' : String(v));
+    }).join(','));
+    const csv = [header].concat(lines).join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'lora-log-export.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  document.getElementById('load-btn').addEventListener('click', loadLogs);
+  document.getElementById('export-btn').addEventListener('click', exportCsv);
+  document.getElementById('check-btn').addEventListener('click', checkDevices);
+  document.getElementById('erase-base-btn').addEventListener('click', () => eraseDevice('base'));
+  document.getElementById('erase-rover-btn').addEventListener('click', () => eraseDevice('rover'));
+  document.getElementById('reset-btn').addEventListener('click', resetBoth);
+  renderSessions();
+})();
+</script>
+</body>
+</html>

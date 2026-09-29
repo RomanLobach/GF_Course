@@ -1,0 +1,21 @@
+{
+  "profile": "P5_FSK_15200",
+  "title": "Профіль 5 — FSK 15.2 кбіт/с, девіація 15.2 кГц",
+  "timestamp": "2026-09-28 21:42:07",
+  "center_hz": 869775000.0,
+  "signal_hz": 869525000.0,
+  "rate": 2400000.0,
+  "gain": 0.0,
+  "clipping_percent": 0.0,
+  "noise_floor_db": 0.4,
+  "segments_found": 31,
+  "expected_airtime_ms": 36.0,
+  "snr_db": 47.1,
+  "packet_start_s": 3.107,
+  "packet_ms": 44.4,
+  "packet_matches_expected": true,
+  "files": {
+    "overview": "captures/20260928/P5_FSK_15200_214207_overview.png",
+    "detail": "captures/20260928/P5_FSK_15200_214207_detail.png"
+  }
+}

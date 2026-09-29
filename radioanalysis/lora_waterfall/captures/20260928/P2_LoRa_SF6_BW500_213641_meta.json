@@ -1,0 +1,17 @@
+{
+  "profile": "P2_LoRa_SF6_BW500",
+  "title": "Профіль 2 — LoRa SF6 / BW500",
+  "timestamp": "2026-09-28 21:36:41",
+  "center_hz": 868700000.0,
+  "signal_hz": 868300000.0,
+  "rate": 2400000.0,
+  "gain": 0.0,
+  "clipping_percent": 0.0,
+  "noise_floor_db": 11.1,
+  "segments_found": 0,
+  "expected_airtime_ms": 17.0,
+  "snr_db": 0.0,
+  "files": {
+    "overview": "captures/20260928/P2_LoRa_SF6_BW500_213641_overview.png"
+  }
+}

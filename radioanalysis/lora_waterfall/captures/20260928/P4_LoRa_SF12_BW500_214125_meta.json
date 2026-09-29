@@ -1,0 +1,21 @@
+{
+  "profile": "P4_LoRa_SF12_BW500",
+  "title": "Профіль 4 — LoRa SF12 / BW500",
+  "timestamp": "2026-09-28 21:41:25",
+  "center_hz": 868700000.0,
+  "signal_hz": 868300000.0,
+  "rate": 2400000.0,
+  "gain": 0.0,
+  "clipping_percent": 0.0,
+  "noise_floor_db": 11.2,
+  "segments_found": 6,
+  "expected_airtime_ms": 616.0,
+  "snr_db": 35.6,
+  "packet_start_s": 1.6043,
+  "packet_ms": 617.0,
+  "packet_matches_expected": true,
+  "files": {
+    "overview": "captures/20260928/P4_LoRa_SF12_BW500_214125_overview.png",
+    "detail": "captures/20260928/P4_LoRa_SF12_BW500_214125_detail.png"
+  }
+}

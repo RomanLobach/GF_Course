@@ -1,0 +1,14 @@
+# PlatformIO build output
+.pio/
+
+# IDEs / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Private working notes (specs, plans) - never published
+.claude/
+.claudeignore
+
+# Local Wi-Fi credentials (template: include/secrets.example.h)
+include/secrets.h
