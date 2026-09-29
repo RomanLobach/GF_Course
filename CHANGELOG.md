@@ -1,0 +1,33 @@
+# Changelog
+
+Усі помітні зміни прошивки `ttgo-lora-bench`. Формат — [Keep a Changelog](https://keepachangelog.com/uk/1.1.0/),
+версії — [SemVer](https://semver.org/lang/uk/). Тег релізу: `hw6-vX.Y.Z`; розділ для версії
+обов'язковий — з нього CI бере опис релізу.
+
+## [Unreleased]
+
+## [0.1.0] - 2026-09-29
+
+### Додано
+- Версія збірки з git: `scripts/version.py` підставляє версію (з тегу `hw6-v*`), hash
+  коміту, дату коміту й ознаку `dirty` як параметри збірки — вручну нічого не прописується.
+- Serial-консоль (115200, `help`): `version`, `log`, `reboot`. Ті самі команди — через
+  `POST /cmd` у режимі Wi-Fi; `GET /version` і `GET /syslog`; версія в `GET /info`.
+- Системний кільцевий лог з рівнями `error/warn/info/debug`: 64 записи в RAM + 256 на flash
+  (`/syslog.bin`, фіксований розмір), переживає перезавантаження; номер завантаження в кожному
+  записі. Вивід у Serial ніколи не блокує радіоядро.
+- CI (GitHub Actions): збірка обох ролей на кожен push у `hw6`; реліз з образами й
+  `manifest.json` на тег `hw6-v*`.
+- Ліцензія MIT.
+
+### Змінено
+- Діагностика `-D APP_DEBUG_SERIAL` тепер лише стартовий рівень `debug` системного логу;
+  рівень змінюється й на льоту (`log level`).
+
+### Базовий стан
+- Прошивка Base/Rover для порівняння LoRa/FSK (синхронізація на службовому каналі,
+  вимірювання, тест частот, лог на LittleFS, вивантаження по Wi-Fi), переглядач логів,
+  скрипти waterfall для RTL-SDR.
+
+[Unreleased]: https://github.com/RomanLobach/GF_Course/compare/hw6-v0.1.0...hw6
+[0.1.0]: https://github.com/RomanLobach/GF_Course/releases/tag/hw6-v0.1.0

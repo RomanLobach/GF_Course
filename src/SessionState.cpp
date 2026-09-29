@@ -1,6 +1,7 @@
 #include "SessionState.h"
 #include <esp_system.h>
 #include "Airtime.h"
+#include "SysLog.h"
 
 using Protocol::DeviceState;
 using Protocol::HbState;
@@ -16,11 +17,6 @@ constexpr bool kIsBase = Config::DEVICE_ROLE == Config::Role::Base;
 
 uint32_t jitterMs() { return esp_random() % (Config::SEARCH_JITTER_MS + 1); }
 
-// Diagnostic output, protocol core only - build with -D APP_DEBUG_SERIAL.
-#define DBG(...)                                   \
-  do {                                             \
-    if (Config::DEBUG_SERIAL) Serial.printf(__VA_ARGS__); \
-  } while (0)
 
 ServicePacket makePacket(const MsgType type, const uint8_t b1, const uint16_t value) {
   ServicePacket p{};
@@ -363,7 +359,7 @@ void SessionState::dropToIdle() {
   state_ = DeviceState::Idle;
   radio_.useServiceChannel();
   radio_.startReceive();
-  DBG("[sess] -> IDLE\n");
+  SLOG_D("sess", "-> IDLE");
 }
 
 void SessionState::enterSearching(const uint32_t now) {
@@ -405,7 +401,7 @@ void SessionState::enterSyncedViaHandshake(const uint16_t id, const uint32_t now
   if (kIsBase) nextHbMs_ = now + Config::HEARTBEAT_INTERVAL_MS;
   logSessionEvent(LogEventKind::SyncSuccess);
   notify(Notice::Synced);
-  DBG("[sess] -> SYNC id=%u\n", sessionId_);
+  SLOG_I("sess", "-> SYNC id=%u", sessionId_);
 }
 
 void SessionState::returnToSynced(const bool newSession, const uint32_t now) {
@@ -860,7 +856,7 @@ void SessionState::startRun(const RunMode mode, const uint8_t profile, const uin
   replyPending_ = false;
   nextBurstSkipped_ = kIsBase && mode == RunMode::Test && !budgetAllowsBurst(profile_);
   notify(mode == RunMode::Meas ? Notice::MeasStarted : Notice::TestStarted);
-  DBG("[run] start %s profile=%u\n", mode == RunMode::Meas ? "MEAS" : "TEST", profile_);
+  SLOG_I("run", "start %s profile=%u", mode == RunMode::Meas ? "MEAS" : "TEST", profile_);
   beginCycle(now);
 }
 
@@ -1137,8 +1133,8 @@ void SessionState::finalizeSlot(const uint32_t now) {
     }
   }
 
-  DBG("[run] slot p=%u decision=%u next=%u missed=%u rx=%u\n", profile_, static_cast<unsigned>(d.decision),
-      d.nextProfile, missedSlots_, kIsBase ? lastReport_.received : rxCount_);
+  SLOG_D("run", "slot p=%u dec=%u next=%u miss=%u rx=%u", profile_, static_cast<unsigned>(d.decision),
+         d.nextProfile, missedSlots_, kIsBase ? lastReport_.received : rxCount_);
   if (missedSlots_ >= Config::SLOT_MISS_LIMIT && d.decision == SlotDecision::Next) {
     endRun(localRequest_ == SlotRequest::Abort ? RunEnd::Abort : RunEnd::LinkLost, now);
     return;
@@ -1185,7 +1181,7 @@ void SessionState::applyDecision(const SlotReply &d, const uint32_t now) {
 void SessionState::endRun(const RunEnd how, const uint32_t now) {
   const bool wasMeas = runMode_ == RunMode::Meas;
   const bool localAbort = localRequest_ == SlotRequest::Abort;
-  DBG("[run] end how=%u\n", static_cast<unsigned>(how));
+  SLOG_I("run", "end how=%u", static_cast<unsigned>(how));
   switch (how) {
     case RunEnd::Done:
       logSessionEvent(LogEventKind::MeasureDone);

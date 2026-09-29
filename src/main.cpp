@@ -1,6 +1,6 @@
 // Orchestration only - see Config.h for pins/timing, and each module's own header for its
 // responsibility. Three tasks:
-//  - loop() (core 1): radio/protocol, menu logic, logging, Wi-Fi. Never blocks.
+//  - loop() (core 1): radio/protocol, menu logic, logging, Wi-Fi, Serial console. Never blocks.
 //  - inputTaskFunc (core 0, higher priority): encoder/button polling only.
 //  - displayTaskFunc (core 0, lower priority): OLED rendering only.
 // They talk only through g_uiEventQueue (input -> loop) and g_displaySnapshotQueue
@@ -19,6 +19,10 @@
 #include "Menu.h"
 #include "Encoder.h"
 #include "Display.h"
+#include "SysLog.h"
+#include "Version.h"
+#include "Console.h"
+#include "SystemCommands.h"
 
 namespace {
 QueueHandle_t g_uiEventQueue;
@@ -27,7 +31,8 @@ QueueHandle_t g_displaySnapshotQueue;
 RadioManager g_radio;
 FlashLog g_flashLog;
 SessionState g_session(g_radio, g_flashLog);
-WifiOffload g_wifiOffload(g_flashLog, g_session);
+Console g_console;
+WifiOffload g_wifiOffload(g_flashLog, g_session, g_console);
 MenuController g_menu(g_session, g_flashLog, g_wifiOffload, g_radio);
 
 // Runs alone: only touches Encoder + g_uiEventQueue. Strictly higher priority than
@@ -73,18 +78,28 @@ void displayTaskFunc(void *) {
 } // namespace
 
 void setup() {
+  Serial.setTxBufferSize(Config::SERIAL_TX_BUFFER_SIZE); // before begin(), see Config.h
   Serial.begin(115200);
+
+  // First, so every later init step lands in the persistent log.
+  const bool sysLogOk = SysLog::begin();
+  SLOG_I("boot", "fw %s %s", Version::FIRMWARE, Version::roleName());
+  SLOG_I("boot", "git %s%s, reset %s, %s", Version::GIT_HASH, Version::DIRTY ? "+dirty" : "",
+         Version::resetReasonName(), Version::runningPartition());
+  if (!sysLogOk) SLOG_E("boot", "syslog file unavailable, RAM only");
 
   g_uiEventQueue = xQueueCreate(Config::UI_EVENT_QUEUE_LEN, sizeof(UiEvent));
   g_displaySnapshotQueue = xQueueCreate(1, sizeof(DisplaySnapshot));
 
   if (!g_radio.begin()) {
-    Serial.println(F("Radio init failed"));
+    SLOG_E("boot", "radio init failed");
   }
   if (!g_flashLog.begin()) {
-    Serial.println(F("Flash log init failed"));
+    SLOG_E("boot", "flash log init failed");
   }
   g_session.begin();
+
+  SystemCommands::registerAll(g_console);
 
   xTaskCreatePinnedToCore(inputTaskFunc, "input", Config::UI_TASK_STACK_WORDS, nullptr,
                           Config::UI_TASK_PRIORITY, nullptr, Config::UI_TASK_CORE);
@@ -100,8 +115,11 @@ void loop() {
 
   g_session.update();
   g_menu.tick();
+  g_console.loopTask();
   // No flash I/O inside a burst window.
-  g_flashLog.loopTask(!g_session.isTimeCritical());
+  const bool allowFlashIo = !g_session.isTimeCritical();
+  g_flashLog.loopTask(allowFlashIo);
+  SysLog::loopTask(allowFlashIo);
 
   const DisplaySnapshot snap = g_menu.buildSnapshot();
   xQueueOverwrite(g_displaySnapshotQueue, &snap);

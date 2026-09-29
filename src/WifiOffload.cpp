@@ -1,12 +1,42 @@
 #include "WifiOffload.h"
 #include "Config.h"
+#include "SysLog.h"
+#include "Version.h"
 
-WifiOffload::WifiOffload(FlashLog &log, SessionState &session) : log_(log), session_(session) {}
+namespace {
+// Print adapter that streams into a chunked HTTP response in small blocks.
+class HttpPrint : public Print {
+public:
+  explicit HttpPrint(WebServer &server) : server_(server) {}
+  ~HttpPrint() override { flush(); }
+
+  size_t write(const uint8_t c) override {
+    buf_[len_++] = static_cast<char>(c);
+    if (len_ == sizeof(buf_) - 1) flush();
+    return 1;
+  }
+  void flush() override {
+    if (len_ == 0) return;
+    buf_[len_] = '\0';
+    server_.sendContent(buf_, len_);
+    len_ = 0;
+  }
+
+private:
+  WebServer &server_;
+  char buf_[256]{};
+  size_t len_ = 0;
+};
+} // namespace
+
+WifiOffload::WifiOffload(FlashLog &log, SessionState &session, Console &console)
+  : log_(log), session_(session), console_(console) {}
 
 void WifiOffload::tryNextCredential() {
   const Config::WifiCredential &cred = Config::WIFI_CREDENTIALS[credentialIndex_];
   WiFi.begin(cred.ssid, cred.password);
   attemptStartMs_ = millis();
+  SLOG_I("wifi", "connecting to '%s'", cred.ssid);
 }
 
 void WifiOffload::start() {
@@ -15,6 +45,7 @@ void WifiOffload::start() {
   serverStarted_ = false;
   WiFiClass::mode(WIFI_STA);
   if (Config::WIFI_CREDENTIAL_COUNT == 0) {
+    SLOG_W("wifi", "no networks configured");
     phase_ = Phase::Failed;
     return;
   }
@@ -29,17 +60,22 @@ void WifiOffload::loopTask() {
     case Phase::Connecting:
       if (WiFiClass::status() == WL_CONNECTED) {
         phase_ = Phase::Connected;
+        SLOG_I("wifi", "connected, ip %s", WiFi.localIP().toString().c_str());
         if (!serverStarted_) {
           server_.on("/logs.csv", HTTP_GET, [this] { handleLogsCsv(); });
           server_.on("/info", HTTP_GET, [this] { handleInfo(); });
           server_.on("/erase-logs", HTTP_POST, [this] { handleEraseLogs(); });
           server_.on("/reset-session", HTTP_POST, [this] { handleResetSession(); });
+          server_.on("/version", HTTP_GET, [this] { handleVersion(); });
+          server_.on("/syslog", HTTP_GET, [this] { handleSyslog(); });
+          server_.on("/cmd", HTTP_POST, [this] { handleCmd(); });
           server_.begin();
           serverStarted_ = true;
         }
       } else if (millis() - attemptStartMs_ >= Config::WIFI_CONNECT_TIMEOUT_MS) {
         credentialIndex_++;
         if (credentialIndex_ >= Config::WIFI_CREDENTIAL_COUNT) {
+          SLOG_W("wifi", "no network reachable");
           phase_ = Phase::Failed;
         } else {
           tryNextCredential();
@@ -98,9 +134,10 @@ void WifiOffload::handleLogsCsv() {
 }
 
 void WifiOffload::handleInfo() {
-  char body[160];
-  snprintf(body, sizeof(body), "{\"role\":\"%s\",\"sessionId\":%u,\"records\":%u,\"fillPercent\":%u}",
-           Config::DEVICE_ROLE == Config::Role::Base ? "base" : "rover", static_cast<unsigned>(session_.sessionId()),
+  char body[224];
+  snprintf(body, sizeof(body),
+           "{\"role\":\"%s\",\"version\":\"%s\",\"device\":\"%s\",\"sessionId\":%u,\"records\":%u,\"fillPercent\":%u}",
+           Version::roleName(), Version::FIRMWARE, Version::deviceId(), static_cast<unsigned>(session_.sessionId()),
            static_cast<unsigned>(log_.recordCount()), static_cast<unsigned>(log_.fillPercent()));
   server_.sendHeader("Access-Control-Allow-Origin", "*");
   server_.send(200, "application/json", body);
@@ -119,4 +156,36 @@ void WifiOffload::handleResetSession() {
   if (ok) session_.resetSessionId();
   server_.sendHeader("Access-Control-Allow-Origin", "*");
   server_.send(ok ? 200 : 500, "text/plain", ok ? "ok" : "erase failed");
+}
+
+void WifiOffload::handleVersion() {
+  char body[384];
+  Version::toJson(body, sizeof(body));
+  server_.sendHeader("Access-Control-Allow-Origin", "*");
+  server_.send(200, "application/json", body);
+}
+
+void WifiOffload::handleSyslog() {
+  char line[] = "log all";
+  runCommand(line);
+}
+
+void WifiOffload::handleCmd() {
+  // CORS-"simple" POST: the viewer sends the command line as a text/plain body.
+  char line[Console::LINE_LEN];
+  server_.arg("plain").toCharArray(line, sizeof(line));
+  SLOG_I("http", "cmd: %s", line);
+  runCommand(line);
+}
+
+void WifiOffload::runCommand(char *line) {
+  server_.sendHeader("Access-Control-Allow-Origin", "*");
+  server_.setContentLength(CONTENT_LENGTH_UNKNOWN);
+  server_.send(200, "text/plain; charset=utf-8", "");
+  {
+    HttpPrint out(server_);
+    Console::Context ctx{out, false};
+    console_.execute(line, ctx);
+  }
+  server_.sendContent(""); // terminate chunked response
 }

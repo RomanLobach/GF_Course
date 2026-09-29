@@ -2,6 +2,7 @@
 #include <LittleFS.h>
 #include "Config.h"
 #include "Protocol.h"
+#include "SysLog.h"
 
 namespace {
 const char *deviceStatusName(uint8_t status) {
@@ -50,7 +51,7 @@ String fmtSessionTime(const uint32_t ms) {
 
 bool FlashLog::begin() {
   if (!LittleFS.begin(true)) { // format on mount failure
-    Serial.println(F("LittleFS mount failed"));
+    SLOG_E("flog", "LittleFS mount failed");
     return false;
   }
 
@@ -66,7 +67,7 @@ bool FlashLog::begin() {
     // size mismatch is the only signal available that this happened, so
     // treat it as stale/incompatible and drop the file rather than export
     // corrupted data.
-    Serial.println(F("log file size mismatches current LogRecord size - erasing stale log"));
+    SLOG_W("flog", "stale log (record size mismatch), erased");
     LittleFS.remove(LOG_PATH);
     fileSize = 0;
   }
@@ -74,7 +75,7 @@ bool FlashLog::begin() {
 
   logFile_ = LittleFS.open(LOG_PATH, "a");
   if (!logFile_) {
-    Serial.println(F("log file open failed"));
+    SLOG_E("flog", "log file open failed");
     return false;
   }
   return true;

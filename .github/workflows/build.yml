@@ -1,0 +1,38 @@
+# Every push to the hw6 branch: build both roles. A red build means "don't tag this".
+name: build
+
+on:
+  push:
+    branches: [hw6]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history + tags, so scripts/version.py can run git describe
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio
+          key: pio-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
+
+      - run: pip install platformio
+
+      # No include/secrets.h here (git-ignored) - the build warns and Wi-Fi just has no
+      # compiled-in networks, which is exactly what a public binary should have.
+      - run: pio run -e base -e rover
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ github.sha }}
+          path: .pio/build/*/firmware.bin
+          retention-days: 14

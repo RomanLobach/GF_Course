@@ -1,0 +1,72 @@
+# Pushing a tag hw6-vX.Y.Z publishes a release:
+#   1. clean build of both roles from the tagged commit;
+#   2. GitHub Release "hw6-vX.Y.Z" with both images + manifest.json, notes from CHANGELOG.md;
+#   3. manifest.json also re-uploaded to the rolling release "hw6-latest" - the fixed URL that
+#      devices poll for updates (the repo-wide "latest release" is shared with other homework
+#      branches, so it can't be used).
+name: release
+
+on:
+  push:
+    tags: ["hw6-v*"]
+
+permissions:
+  contents: write # create releases and upload assets with the built-in GITHUB_TOKEN
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio
+          key: pio-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
+
+      - run: pip install platformio
+
+      - run: pio run -e base -e rover
+
+      - name: Package images + manifest
+        run: python scripts/make_manifest.py --repo "${{ github.repository }}" --out dist
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          VERSION="${TAG#hw6-v}"
+          awk -v v="$VERSION" '
+            $0 ~ "^## \\[" v "\\]" { found = 1; next }
+            found && /^## \[/     { exit }
+            found                 { print }
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "CHANGELOG.md has no section for $VERSION" >&2
+            exit 1
+          fi
+
+      - name: Create release
+        run: |
+          gh release create "$TAG" dist/* \
+            --verify-tag \
+            --title "ttgo-lora-bench ${TAG#hw6-v}" \
+            --notes-file notes.md
+
+      - name: Point hw6-latest at this release
+        run: |
+          if ! gh release view hw6-latest >/dev/null 2>&1; then
+            gh release create hw6-latest --prerelease --target "$GITHUB_SHA" \
+              --title "hw6 OTA pointer" \
+              --notes "Holds only manifest.json of the newest hw6 release. Devices read it to check for updates."
+          fi
+          gh release upload hw6-latest dist/manifest.json --clobber

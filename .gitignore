@@ -12,3 +12,6 @@
 
 # Local Wi-Fi credentials (template: include/secrets.example.h)
 include/secrets.h
+
+# Release packaging output (scripts/make_manifest.py)
+dist/

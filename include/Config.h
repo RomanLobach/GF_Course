@@ -183,12 +183,16 @@ constexpr UBaseType_t DISPLAY_TASK_PRIORITY = 1;   // strictly below UI_TASK_PRI
 constexpr size_t UI_EVENT_QUEUE_LEN = 16;
 constexpr uint32_t UI_POPUP_DURATION_MS = 1500;
 
-// Diagnostic Serial output from the protocol core only. Build with
-// -D APP_DEBUG_SERIAL to enable; never print from the input task.
+// ---- System log / console (protocol core only; never print from the input task) ----
+// SysLog level at boot: 0 error, 1 warn, 2 info, 3 debug. -D APP_DEBUG_SERIAL starts at debug
+// (state-machine transitions and slot decisions); `log level` changes it at runtime.
 #if defined(APP_DEBUG_SERIAL)
-constexpr bool DEBUG_SERIAL = true;
+constexpr uint8_t SYSLOG_DEFAULT_LEVEL = 3;
 #else
-constexpr bool DEBUG_SERIAL = false;
+constexpr uint8_t SYSLOG_DEFAULT_LEVEL = 2;
 #endif
+// UART TX ring buffer (set before Serial.begin()). Log echo and console replies only write
+// what fits in it, so Serial output never blocks the protocol core.
+constexpr size_t SERIAL_TX_BUFFER_SIZE = 4096;
 
 } // namespace Config

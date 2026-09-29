@@ -81,6 +81,18 @@ waterfall для кожного профілю.
    [doc/LoRa_PC_viewer_makett.html](doc/LoRa_PC_viewer_makett.html), ввести IP обох пристроїв.
 5. Waterfall (пристрої в TEST):
    `cd radioanalysis/lora_waterfall && ~/radioconda/bin/python run_all.py --open`.
+6. Консоль: `pio device monitor -e base` (або `-e rover`) → `help`. Команди: `version`,
+   `log [n|all]`, `log level error|warn|info|debug`, `log clear`, `log stats`, `reboot`.
+   У режимі Wi-Fi ті самі команди — `POST /cmd` (тіло — рядок команди), а також
+   `GET /version`, `GET /syslog`.
+
+## Версії та релізи
+
+Версія прошивки не прописується вручну: [scripts/version.py](scripts/version.py) бере її з git-тегу
+`hw6-vX.Y.Z` (між релізами — `X.Y.Z-<комітів>-g<hash>`, з незакоміченими змінами — `-dirty`) і
+передає в збірку параметрами `-D`. Реліз — це push тегу: GitHub Actions збирає обидві ролі з
+чистого дерева й публікує [Release](https://github.com/RomanLobach/GF_Course/releases) з образами
+та `manifest.json` (розмір і SHA-256 кожного образу). Зміни — у [CHANGELOG.md](CHANGELOG.md).
 
 ## Результати
 
