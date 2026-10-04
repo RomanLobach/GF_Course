@@ -101,7 +101,7 @@ void cmdReboot(void *self, int, char **, Console::Context &ctx) {
 }
 
 constexpr auto CONFIG_USAGE =
-    "config [show] | config get <key> | config set <key> <value> | config reset | config stress [n]";
+    "config [show] | config get <key> | config set <key> <value> | config reset | config stress [n] | config tear-test";
 
 // `config stress`: back-to-back saves for the power-cut experiment. One save per job call,
 // at most one every STRESS_PERIOD_MS; any byte typed on Serial stops it.
@@ -171,6 +171,23 @@ void cmdConfig(void *self, const int argc, char **argv, Console::Context &ctx) {
     const bool ok = config->resetToDefaults();
     SysLog::setLevel(static_cast<LogLevel>(config->get().logLevel));
     out.println(ok ? F("config reset to defaults (session id kept)") : F("error: saving to NVS failed"));
+    return;
+  }
+  if (argc >= 2 && strcmp(argv[1], "tear-test") == 0) {
+    // Simulated power cut mid-save: a torn blob in the inactive slot, then a restart. The
+    // board must come back with the old values and `load: recovered`.
+    if (!ctx.serial) {
+      out.println(F("error: config tear-test only from the Serial console"));
+      return;
+    }
+    if (!config->tearTest()) {
+      out.println(F("error: NVS write failed"));
+      return;
+    }
+    out.printf("torn write of ota_url = http://torn.write/ (half the blob); kept: %s\nrebooting...\n",
+               config->get().otaUrl);
+    SysLog::loopTask(true);
+    g_console->scheduleRestart(300);
     return;
   }
   if (argc >= 2 && strcmp(argv[1], "stress") == 0) {

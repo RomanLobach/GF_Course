@@ -92,8 +92,9 @@ waterfall для кожного профілю.
 6. Консоль: `pio device monitor -e base` (або `-e rover`) → `help`. Команди: `version`,
    `log [n|all]`, `log level error|warn|info|debug`, `log clear`, `log stats`, `reboot`,
    `post`, `ota [status]|check|update [--force]|cancel`, `wifi list|add|del`, `config [show]`, `config get|set <ключ> [значення]`,
-   `config reset`. Параметри конфігурації: `log_level` (рівень системного логу після старту,
-   0–3 або `error`…`debug`) і `ota_url` (адреса маніфесту оновлень); `session_id` — лише для
+   `config reset`, `config stress [n]`, `config tear-test`. Параметри конфігурації: `log_level` (рівень системного логу після старту,
+   0–3 або `error`…`debug`), `ota_url` (адреса маніфесту оновлень), `wifi_timeout_s` (секунд на
+   одну мережу Wi-Fi, 3–30) і `portal_timeout_min` (автозакриття налаштування Wi-Fi, 1–60 хв); `session_id` — лише для
    читання. Конфіг зберігається у двох копіях із CRC, тож обрив живлення під час запису не
    губить попередні значення.
    У режимі Wi-Fi ті самі команди — `POST /cmd` (тіло — рядок команди; `wifi add/del` — лише

@@ -24,12 +24,22 @@ struct PayloadV1 {
   uint8_t logLevel;
   char otaUrl[Config::OTA_URL_MAX + 1];
 };
+// Schema 2 (1.0.0): + Wi-Fi connect timeout and setup-portal idle timeout, both formerly
+// fixed in the firmware. A schema-1 blob migrates with the old built-in values.
+struct PayloadV2 {
+  uint16_t sessionId;
+  uint8_t logLevel;
+  char otaUrl[Config::OTA_URL_MAX + 1];
+  uint8_t wifiTimeoutS;
+  uint8_t portalTimeoutMin;
+};
 #pragma pack(pop)
 static_assert(sizeof(BlobHeader) == 10, "config blob header layout");
 static_assert(sizeof(PayloadV1) == 132, "config schema 1 layout");
+static_assert(sizeof(PayloadV2) == 134, "config schema 2 layout");
 constexpr size_t CRC_LEN = 4;
 constexpr size_t BLOB_MAX = 256; // largest blob any schema may use
-static_assert(sizeof(BlobHeader) + sizeof(PayloadV1) + CRC_LEN <= BLOB_MAX, "config blob too large");
+static_assert(sizeof(BlobHeader) + sizeof(PayloadV2) + CRC_LEN <= BLOB_MAX, "config blob too large");
 
 enum class ParamType : uint8_t { UInt, Text };
 struct ParamDef {
@@ -45,9 +55,11 @@ constexpr ParamDef PARAMS[] = {
   {"session_id", ParamType::UInt, 0, 9999, true, "last session id (reset only from the viewer, with the logs)"},
   {"log_level", ParamType::UInt, 0, 3, false, "system log level at boot: 0 error, 1 warn, 2 info, 3 debug"},
   {"ota_url", ParamType::Text, 10, Config::OTA_URL_MAX, false, "update manifest URL (http:// or https://)"},
+  {"wifi_timeout_s", ParamType::UInt, 3, 30, false, "seconds to wait for each Wi-Fi network before the next one"},
+  {"portal_timeout_min", ParamType::UInt, 1, 60, false, "Wi-Fi setup portal closes after this many idle minutes"},
 };
 constexpr size_t PARAM_COUNT = sizeof(PARAMS) / sizeof(PARAMS[0]);
-enum ParamIndex : size_t { P_SESSION_ID, P_LOG_LEVEL, P_OTA_URL };
+enum ParamIndex : size_t { P_SESSION_ID, P_LOG_LEVEL, P_OTA_URL, P_WIFI_TIMEOUT, P_PORTAL_TIMEOUT };
 
 int findParam(const char *key) {
   for (size_t i = 0; i < PARAM_COUNT; i++) {
@@ -92,6 +104,19 @@ bool decodePayload(const uint16_t version, const uint8_t *p, const size_t len, D
       out.logLevel = v1.logLevel;
       memcpy(out.otaUrl, v1.otaUrl, sizeof(out.otaUrl));
       out.otaUrl[Config::OTA_URL_MAX] = '\0';
+      // Fields schema 1 didn't have keep the defaults (= the values 0.4.0 had built in).
+      return true;
+    }
+    case 2: {
+      if (len != sizeof(PayloadV2)) return false;
+      PayloadV2 v2{};
+      memcpy(&v2, p, sizeof(v2));
+      out.sessionId = v2.sessionId;
+      out.logLevel = v2.logLevel;
+      memcpy(out.otaUrl, v2.otaUrl, sizeof(out.otaUrl));
+      out.otaUrl[Config::OTA_URL_MAX] = '\0';
+      out.wifiTimeoutS = v2.wifiTimeoutS;
+      out.portalTimeoutMin = v2.portalTimeoutMin;
       return true;
     }
     default:
@@ -100,12 +125,14 @@ bool decodePayload(const uint16_t version, const uint8_t *p, const size_t len, D
 }
 
 size_t encodePayload(const DeviceConfig &cfg, uint8_t *p) {
-  PayloadV1 v1{};
-  v1.sessionId = cfg.sessionId;
-  v1.logLevel = cfg.logLevel;
-  memcpy(v1.otaUrl, cfg.otaUrl, sizeof(v1.otaUrl));
-  memcpy(p, &v1, sizeof(v1));
-  return sizeof(v1);
+  PayloadV2 v2{};
+  v2.sessionId = cfg.sessionId;
+  v2.logLevel = cfg.logLevel;
+  memcpy(v2.otaUrl, cfg.otaUrl, sizeof(v2.otaUrl));
+  v2.wifiTimeoutS = cfg.wifiTimeoutS;
+  v2.portalTimeoutMin = cfg.portalTimeoutMin;
+  memcpy(p, &v2, sizeof(v2));
+  return sizeof(v2);
 }
 
 } // namespace
@@ -118,6 +145,8 @@ void ConfigStore::setDefaults(DeviceConfig &cfg) {
   cfg.sessionId = 0;
   cfg.logLevel = static_cast<uint8_t>(LogLevel::Info); // -D APP_DEBUG_SERIAL overrides it at boot
   strlcpy(cfg.otaUrl, Config::OTA_DEFAULT_MANIFEST_URL, sizeof(cfg.otaUrl));
+  cfg.wifiTimeoutS = Config::WIFI_CONNECT_TIMEOUT_DEFAULT_S;
+  cfg.portalTimeoutMin = Config::PORTAL_IDLE_TIMEOUT_DEFAULT_MIN;
 }
 
 bool ConfigStore::sanitize(DeviceConfig &cfg) {
@@ -130,6 +159,14 @@ bool ConfigStore::sanitize(DeviceConfig &cfg) {
   }
   if (cfg.logLevel > PARAMS[P_LOG_LEVEL].max) {
     cfg.logLevel = def.logLevel;
+    fixed = true;
+  }
+  if (cfg.wifiTimeoutS < PARAMS[P_WIFI_TIMEOUT].min || cfg.wifiTimeoutS > PARAMS[P_WIFI_TIMEOUT].max) {
+    cfg.wifiTimeoutS = def.wifiTimeoutS;
+    fixed = true;
+  }
+  if (cfg.portalTimeoutMin < PARAMS[P_PORTAL_TIMEOUT].min || cfg.portalTimeoutMin > PARAMS[P_PORTAL_TIMEOUT].max) {
+    cfg.portalTimeoutMin = def.portalTimeoutMin;
     fixed = true;
   }
   if (!validUrl(cfg.otaUrl)) {
@@ -191,15 +228,20 @@ uint8_t ConfigStore::targetSlot() const {
   return static_cast<int32_t>(slots_[0].generation - slots_[1].generation) <= 0 ? 0 : 1;
 }
 
-bool ConfigStore::save() {
-  uint8_t buf[BLOB_MAX];
-  const uint32_t generation = anyGeneration_ ? maxGeneration_ + 1 : 1;
+size_t ConfigStore::buildBlob(uint8_t *buf, const uint32_t generation) const {
   const size_t payloadLen = encodePayload(cfg_, buf + sizeof(BlobHeader));
   const BlobHeader h{MAGIC, SCHEMA_VERSION, generation, static_cast<uint16_t>(payloadLen)};
   memcpy(buf, &h, sizeof(h));
   const size_t len = sizeof(h) + payloadLen + CRC_LEN;
   const uint32_t crc = crc32(buf, len - CRC_LEN);
   memcpy(buf + len - CRC_LEN, &crc, CRC_LEN);
+  return len;
+}
+
+bool ConfigStore::save() {
+  uint8_t buf[BLOB_MAX];
+  const uint32_t generation = anyGeneration_ ? maxGeneration_ + 1 : 1;
+  const size_t len = buildBlob(buf, generation);
 
   const uint8_t slot = targetSlot();
   Preferences prefs;
@@ -340,6 +382,13 @@ ConfigStore::SetResult ConfigStore::set(const char *key, const char *value) {
       if (!validUrl(value)) return SetResult::Invalid;
       strlcpy(cfg_.otaUrl, value, sizeof(cfg_.otaUrl));
       break;
+    case P_WIFI_TIMEOUT:
+    case P_PORTAL_TIMEOUT: {
+      uint32_t v = 0;
+      if (!parseUInt(value, v) || v < p.min || v > p.max) return SetResult::Invalid;
+      (idx == P_WIFI_TIMEOUT ? cfg_.wifiTimeoutS : cfg_.portalTimeoutMin) = static_cast<uint8_t>(v);
+      break;
+    }
     case P_SESSION_ID:
       return SetResult::ReadOnly;
   }
@@ -360,6 +409,26 @@ bool ConfigStore::stressWrite(const uint32_t n) {
   return false;
 }
 
+bool ConfigStore::tearTest() {
+  // The new value goes into a full blob with the next generation, but only its first half
+  // reaches NVS - the length no longer matches the header, so the loader rejects the slot.
+  const DeviceConfig before = cfg_;
+  strlcpy(cfg_.otaUrl, "http://torn.write/", sizeof(cfg_.otaUrl));
+  uint8_t buf[BLOB_MAX];
+  const size_t len = buildBlob(buf, anyGeneration_ ? maxGeneration_ + 1 : 1);
+  cfg_ = before;
+
+  const uint8_t slot = targetSlot();
+  Preferences prefs;
+  if (!prefs.begin(Config::CFG_NVS_NAMESPACE, false)) return false;
+  const bool ok = prefs.putBytes(SLOT_KEYS[slot], buf, len / 2) == len / 2;
+  prefs.end();
+  slots_[slot].state = SlotState::Bad;
+  SLOG_W("cfg", "tear-test: %u of %u B into slot %c", static_cast<unsigned>(len / 2), static_cast<unsigned>(len),
+         SLOT_NAMES[slot]);
+  return ok;
+}
+
 bool ConfigStore::resetToDefaults() {
   const uint16_t sessionId = cfg_.sessionId;
   setDefaults(cfg_);
@@ -377,11 +446,13 @@ bool ConfigStore::print(Print &out, const char *key) const {
     if (key && strcasecmp(key, p.key) != 0) continue;
     any = true;
     switch (static_cast<ParamIndex>(i)) {
-      case P_SESSION_ID: out.printf("%-10s = %04u", p.key, cfg_.sessionId); break;
+      case P_SESSION_ID: out.printf("%-18s = %04u", p.key, cfg_.sessionId); break;
       case P_LOG_LEVEL:
-        out.printf("%-10s = %u (%s)", p.key, cfg_.logLevel, SysLog::levelName(static_cast<LogLevel>(cfg_.logLevel)));
+        out.printf("%-18s = %u (%s)", p.key, cfg_.logLevel, SysLog::levelName(static_cast<LogLevel>(cfg_.logLevel)));
         break;
-      case P_OTA_URL: out.printf("%-10s = %s", p.key, cfg_.otaUrl); break;
+      case P_OTA_URL: out.printf("%-18s = %s", p.key, cfg_.otaUrl); break;
+      case P_WIFI_TIMEOUT: out.printf("%-18s = %u", p.key, cfg_.wifiTimeoutS); break;
+      case P_PORTAL_TIMEOUT: out.printf("%-18s = %u", p.key, cfg_.portalTimeoutMin); break;
     }
     if (p.type == ParamType::UInt) {
       out.printf("\n             range %lu..%lu", static_cast<unsigned long>(p.min), static_cast<unsigned long>(p.max));
@@ -392,6 +463,10 @@ bool ConfigStore::print(Print &out, const char *key) const {
       out.print(", read-only");
     } else if (i == P_LOG_LEVEL) {
       out.printf(", default %u", def.logLevel);
+    } else if (i == P_WIFI_TIMEOUT) {
+      out.printf(", default %u", def.wifiTimeoutS);
+    } else if (i == P_PORTAL_TIMEOUT) {
+      out.printf(", default %u", def.portalTimeoutMin);
     } else {
       out.print(", default: GitHub hw6-latest");
     }

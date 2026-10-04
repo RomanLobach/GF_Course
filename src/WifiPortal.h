@@ -13,7 +13,7 @@
 // back to the page, SSIDs never go to SysLog.
 //
 // Only from IDLE with the radio paused (MenuController). Everything runs on the protocol
-// core from loopTask(), non-blocking; closes by itself after Config::PORTAL_IDLE_TIMEOUT_MS
+// core from loopTask(), non-blocking; closes by itself after `portal_timeout_min` (config)
 // without a request.
 #pragma once
 
@@ -21,9 +21,12 @@
 #include <DNSServer.h>
 #include <WebServer.h>
 #include "Config.h"
+#include "ConfigStore.h"
 
 class WifiPortal {
 public:
+  explicit WifiPortal(const ConfigStore &config) : config_(config) {}
+
   void start();
   void stop();
   void loopTask(); // every main-loop iteration; no-op while inactive
@@ -35,6 +38,7 @@ public:
   void screenText(char *buf, size_t len) const;
 
 private:
+  const ConfigStore &config_;
   WebServer server_{80};
   DNSServer dns_;
   bool active_ = false;

@@ -5,8 +5,8 @@
 #include "Post.h"
 #include "HttpPrint.h"
 
-WifiOffload::WifiOffload(FlashLog &log, SessionState &session, Console &console)
-  : log_(log), session_(session), console_(console) {}
+WifiOffload::WifiOffload(FlashLog &log, SessionState &session, Console &console, const ConfigStore &config)
+  : log_(log), session_(session), console_(console), config_(config) {}
 
 void WifiOffload::tryNextCredential() {
   const WifiStore::Network &net = candidates_[credentialIndex_];
@@ -73,7 +73,7 @@ void WifiOffload::loopTask() {
           server_.begin();
           serverStarted_ = true;
         }
-      } else if (millis() - attemptStartMs_ >= Config::WIFI_CONNECT_TIMEOUT_MS) {
+      } else if (millis() - attemptStartMs_ >= config_.get().wifiTimeoutS * 1000UL) {
         credentialIndex_++;
         if (credentialIndex_ >= candidateCount_) {
           SLOG_W("wifi", "no network reachable");

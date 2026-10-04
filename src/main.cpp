@@ -37,9 +37,9 @@ FlashLog g_flashLog;
 ConfigStore g_config;
 SessionState g_session(g_radio, g_flashLog, g_config);
 Console g_console;
-WifiOffload g_wifiOffload(g_flashLog, g_session, g_console);
+WifiOffload g_wifiOffload(g_flashLog, g_session, g_console, g_config);
 Ota g_ota(g_wifiOffload, g_radio, g_session, g_config);
-WifiPortal g_wifiPortal;
+WifiPortal g_wifiPortal(g_config);
 MenuController g_menu(g_session, g_flashLog, g_wifiOffload, g_radio, g_ota, g_wifiPortal);
 
 // Runs alone: only touches Encoder + g_uiEventQueue. Strictly higher priority than

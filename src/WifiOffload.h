@@ -22,12 +22,13 @@
 #include "SessionState.h"
 #include "Console.h"
 #include "WifiStore.h"
+#include "ConfigStore.h"
 
 class WifiOffload {
 public:
   enum class Phase : uint8_t { Idle, Connecting, Connected, Failed };
 
-  WifiOffload(FlashLog &log, SessionState &session, Console &console);
+  WifiOffload(FlashLog &log, SessionState &session, Console &console, const ConfigStore &config);
 
   void start(); // begin trying the saved networks, then Config::WIFI_CREDENTIALS, in order
   void loopTask(); // call every main-loop iteration while phase() != Idle
@@ -42,6 +43,7 @@ private:
   FlashLog &log_;
   SessionState &session_;
   Console &console_;
+  const ConfigStore &config_;
   WebServer server_{80};
   Phase phase_ = Phase::Idle;
   static constexpr size_t MAX_CANDIDATES = Config::WIFI_STORED_MAX + Config::WIFI_CREDENTIAL_COUNT;

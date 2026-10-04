@@ -90,7 +90,7 @@ void WifiPortal::loopTask() {
   if (!active_) return;
   dns_.processNextRequest();
   server_.handleClient();
-  if (millis() - lastRequestMs_ >= Config::PORTAL_IDLE_TIMEOUT_MS) {
+  if (millis() - lastRequestMs_ >= config_.get().portalTimeoutMin * 60000UL) {
     SLOG_I("portal", "idle timeout");
     stop();
     timedOut_ = true;

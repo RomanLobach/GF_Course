@@ -6,6 +6,17 @@
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-04
+
+### Додано
+- Схема конфігурації v2: параметри `wifi_timeout_s` (3–30 с, час на одну мережу Wi-Fi) і
+  `portal_timeout_min` (1–60 хв, автозакриття налаштування Wi-Fi). Конфіг v1 мігрує
+  автоматично: старі значення зберігаються, нові поля отримують значення, які раніше були
+  вшиті в прошивку (8 с, 10 хв). Старий слот лишається, тож відкат на 0.4.0 читає свій конфіг.
+- `config tear-test` (лише Serial): імітує обрив живлення посеред запису — у неактивний слот
+  потрапляє половина нового блоку, плата перезапускається й має стартувати зі старими
+  значеннями (`load: recovered`).
+
 ## [0.4.0] - 2026-10-04
 
 ### Додано
@@ -91,7 +102,8 @@
   вимірювання, тест частот, лог на LittleFS, вивантаження по Wi-Fi), переглядач логів,
   скрипти waterfall для RTL-SDR.
 
-[Unreleased]: https://github.com/RomanLobach/GF_Course/compare/hw6-v0.4.0...hw6
+[Unreleased]: https://github.com/RomanLobach/GF_Course/compare/hw6-v1.0.0...hw6
+[1.0.0]: https://github.com/RomanLobach/GF_Course/releases/tag/hw6-v1.0.0
 [0.4.0]: https://github.com/RomanLobach/GF_Course/releases/tag/hw6-v0.4.0
 [0.3.0]: https://github.com/RomanLobach/GF_Course/releases/tag/hw6-v0.3.0
 [0.2.0]: https://github.com/RomanLobach/GF_Course/releases/tag/hw6-v0.2.0

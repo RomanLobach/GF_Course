@@ -22,11 +22,13 @@ struct DeviceConfig {
   uint16_t sessionId = 0;                    // last used session id (service field)
   uint8_t logLevel = 2;                      // SysLog level at boot, 0 error .. 3 debug
   char otaUrl[Config::OTA_URL_MAX + 1] = {}; // update manifest URL
+  uint8_t wifiTimeoutS = Config::WIFI_CONNECT_TIMEOUT_DEFAULT_S;       // per network, schema 2
+  uint8_t portalTimeoutMin = Config::PORTAL_IDLE_TIMEOUT_DEFAULT_MIN; // setup portal idle, schema 2
 };
 
 class ConfigStore {
 public:
-  static constexpr uint16_t SCHEMA_VERSION = 1;
+  static constexpr uint16_t SCHEMA_VERSION = 2;
 
   enum class LoadResult : uint8_t {
     Loaded,      // newest slot valid
@@ -54,6 +56,9 @@ public:
   // Power-cut experiment: store ota_url = "http://stress.test/<n>" and save, without a SysLog
   // line per write (a long run would push the whole history out of the ring).
   bool stressWrite(uint32_t n);
+  // Break-it experiment: write a deliberately torn blob (new value, half the bytes) into the
+  // slot the next save would use, as if power died mid-write. The active slot is untouched.
+  bool tearTest();
   char activeSlotName() const { return activeSlot_ >= 0 ? (activeSlot_ == 0 ? 'A' : 'B') : '-'; }
   uint32_t generation() const { return maxGeneration_; }
 
@@ -81,6 +86,7 @@ private:
   static bool sanitize(DeviceConfig &cfg); // true if something had to be reset
   bool readSlot(uint8_t slot, DeviceConfig &out);
   bool save();
+  size_t buildBlob(uint8_t *buf, uint32_t generation) const;
   uint8_t targetSlot() const;
   bool migrateLegacy();
 };

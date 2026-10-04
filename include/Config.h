@@ -160,16 +160,18 @@ struct WifiCredential {
 #endif
 constexpr WifiCredential WIFI_CREDENTIALS[] = WIFI_SECRETS;
 constexpr size_t WIFI_CREDENTIAL_COUNT = sizeof(WIFI_CREDENTIALS) / sizeof(WIFI_CREDENTIALS[0]);
-constexpr uint32_t WIFI_CONNECT_TIMEOUT_MS = 8000;
+// Per-network connect timeout: default of the `wifi_timeout_s` config parameter.
+constexpr uint8_t WIFI_CONNECT_TIMEOUT_DEFAULT_S = 8;
 // Networks added from the Serial console (`wifi add`) live in NVS and are tried before the
 // built-in ones - release images carry no secrets.h, so this is how they get Wi-Fi at all.
 constexpr auto WIFI_NVS_NAMESPACE = "ttgo_wifi";
 constexpr size_t WIFI_STORED_MAX = 4;
 // Setup portal (see WifiPortal.h): WPA2 access point "<prefix><deviceId>" with a fresh random
-// password per opening, shown on the OLED; closes by itself after this long without a request.
+// password per opening, shown on the OLED; closes by itself after `portal_timeout_min`
+// (config, default below) without a request.
 constexpr auto PORTAL_AP_PREFIX = "ttgo-lora-bench-";
 constexpr size_t PORTAL_PASSWORD_LEN = 8;
-constexpr uint32_t PORTAL_IDLE_TIMEOUT_MS = 10UL * 60 * 1000;
+constexpr uint8_t PORTAL_IDLE_TIMEOUT_DEFAULT_MIN = 10;
 constexpr size_t PORTAL_SCAN_MAX = 12; // networks listed on the page, strongest first
 
 // ---- Persistent config (NVS, see ConfigStore.h) ----
