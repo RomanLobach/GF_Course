@@ -1,0 +1,138 @@
+### [межі значень, config set, config tear-test (половина нового блоку в неактивний слот + перезапуск) -> старт зі старим значенням, load: recovered]
+ets Jun  8 2016 00:22:57
+
+rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 188777542, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:1184
+load:0x40078000,len:13232
+load:0x40080400,len:3028
+entry 0x400805e4
+#362 b49 [     0.439] I boot : fw 1.0.0 rover
+#363 b49 [     0.440] I boot : git e52120d5, reset power-on, app0
+#364 b49 [     0.447] I cfg  : loaded, slot B gen 1764
+#365 b49 [     0.482] I post : ok mask 0x00, batt 4138 mV, sx127x 0x12
+
+> config set wifi_timeout_s 31
+error: value out of range:
+wifi_timeout_s     = 8
+             range 3..30, default 8
+             seconds to wait for each Wi-Fi network before the next one
+
+> config set wifi_timeout_s 12
+#366 b49 [     4.617] I cfg  : wifi_timeout_s changed
+wifi_timeout_s     = 12
+             range 3..30, default 8
+             seconds to wait for each Wi-Fi network before the next one
+
+> config show
+config schema v2, load: loaded, active slot A
+  slot A: ok, schema v2, gen 1765
+  slot B: ok, schema v2, gen 1764
+session_id         = 0002
+             range 0..9999, read-only
+             last session id (reset only from the viewer, with the logs)
+log_level          = 2 (info)
+             range 0..3, default 2
+             system log level at boot: 0 error, 1 warn, 2 info, 3 debug
+ota_url            = https://github.com/RomanLobach/GF_Course/releases/download/hw6-latest/manifest.json
+             length 10..128, default: GitHub hw6-latest
+             update manifest URL (http:// or https://)
+wifi_timeout_s     = 12
+             range 3..30, default 8
+             seconds to wait for each Wi-Fi network before the next one
+portal_timeout_min = 10
+             range 1..60, default 10
+             Wi-Fi setup portal closes after this many idle minutes
+
+> config tear-test
+#367 b49 [     8.680] W cfg  : tear-test: 74 of 148 B into slot B
+torn write of ota_url = http://torn.write/ (half the blob); kept: https://github.com/RomanLobach/GF_Course/releases/download/hw6-latest/manifest.json
+rebooting...
+ets Jun  8 2016 00:22:57
+
+rst:0xc (SW_CPU_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 188777542, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:1184
+load:0x40078000,len:13232
+load:0x40080400,len:3028
+entry 0x400805e4
+#368 b50 [     0.453] I boot : fw 1.0.0 rover
+#369 b50 [     0.454] I boot : git e52120d5, reset software, app0
+#370 b50 [     0.461] W cfg  : recovered from the other slot, slot A gen 1765
+#371 b50 [     0.509] I post : ok mask 0x00, batt 4170 mV, sx127x 0x12
+
+> config show
+config schema v2, load: recovered from the other slot, active slot A
+  slot A: ok, schema v2, gen 1765
+  slot B: damaged
+session_id         = 0002
+             range 0..9999, read-only
+             last session id (reset only from the viewer, with the logs)
+log_level          = 2 (info)
+             range 0..3, default 2
+             system log level at boot: 0 error, 1 warn, 2 info, 3 debug
+ota_url            = https://github.com/RomanLobach/GF_Course/releases/download/hw6-latest/manifest.json
+             length 10..128, default: GitHub hw6-latest
+             update manifest URL (http:// or https://)
+wifi_timeout_s     = 12
+             range 3..30, default 8
+             seconds to wait for each Wi-Fi network before the next one
+portal_timeout_min = 10
+             range 1..60, default 10
+             Wi-Fi setup portal closes after this many idle minutes
+
+> post
+POST ok, mask 0x00 (reset: software)
+  0 power    ok  (4170 mV, min 3300)
+  1 nvs      ok
+  2 radio    ok  (version 0x12)
+  3 oled     ok
+  4 storage  ok
+  5 config   ok
+  6 reset    ok
+  7 forced   ok
+
+> log 12
+#360 b48 [     0.571] I post : ok mask 0x00, batt 4070 mV, sx127x 0x12
+#361 b48 [     0.624] I ota  : new image confirmed in app0
+#362 b49 [     0.439] I boot : fw 1.0.0 rover
+#363 b49 [     0.440] I boot : git e52120d5, reset power-on, app0
+#364 b49 [     0.447] I cfg  : loaded, slot B gen 1764
+#365 b49 [     0.482] I post : ok mask 0x00, batt 4138 mV, sx127x 0x12
+#366 b49 [     4.617] I cfg  : wifi_timeout_s changed
+#367 b49 [     8.680] W cfg  : tear-test: 74 of 148 B into slot B
+#368 b50 [     0.453] I boot : fw 1.0.0 rover
+#369 b50 [     0.454] I boot : git e52120d5, reset software, app0
+#370 b50 [     0.461] W cfg  : recovered from the other slot, slot A gen 1765
+#371 b50 [     0.509] I post : ok mask 0x00, batt 4170 mV, sx127x 0x12
+-- end of log --
+
+> config set wifi_timeout_s 8
+#372 b50 [    12.958] I cfg  : wifi_timeout_s changed
+wifi_timeout_s     = 8
+             range 3..30, default 8
+             seconds to wait for each Wi-Fi network before the next one
+
+> config show
+config schema v2, load: recovered from the other slot, active slot B
+  slot A: ok, schema v2, gen 1765
+  slot B: ok, schema v2, gen 1766
+session_id         = 0002
+             range 0..9999, read-only
+             last session id (reset only from the viewer, with the logs)
+log_level          = 2 (info)
+             range 0..3, default 2
+             system log level at boot: 0 error, 1 warn, 2 info, 3 debug
+ota_url            = https://github.com/RomanLobach/GF_Course/releases/download/hw6-latest/manifest.json
+             length 10..128, default: GitHub hw6-latest
+             update manifest URL (http:// or https://)
+wifi_timeout_s     = 8
+             range 3..30, default 8
+             seconds to wait for each Wi-Fi network before the next one
+portal_timeout_min = 10
+             range 1..60, default 10
+             Wi-Fi setup portal closes after this many idle minutes

@@ -21,7 +21,7 @@
 
 ## Методика
 
-1. Плата Rover, живлення лише від USB (акумулятор від'єднано).
+1. Плата Rover без акумулятора, живлення лише від USB.
 2. У консолі `config stress 5000` — безперервні збереження: кожна ітерація пише
    `ota_url = http://stress.test/N`. Перед записом плата друкує `write N ->`, після успішного
    запису — `ok slot X gen G`.
@@ -32,9 +32,61 @@
 Скрипт [scripts/console_session.py](../scripts/console_session.py) записує вивід консолі у файл
 одразу, тож останній рядок перед обривом зберігається.
 
-## Результати (2026-10-04, прошивка 0.1.0-1-g0d3db36c-dirty, Rover `93F5FC`)
+## Результати на релізі 1.0.0 (2026-10-04, Rover `93F5FC`)
 
-### Спроба 2 — з повним журналом ([logs/rover-power-cut-2.txt](logs/rover-power-cut-2.txt))
+### Обрив живлення ([logs/rover-power-cut-1.0.0.txt](logs/rover-power-cut-1.0.0.txt))
+
+Stress стартував із generation 1766. Останні рядки, що дійшли до ПК:
+
+```
+write 3154 -> ok slot B gen 4920
+write 3155 -> ok slot A gen 4921
+### [port lost: USB висмикнуто]
+```
+
+Після ввімкнення:
+
+```
+#380 b52 [     0.472] I cfg  : loaded, slot A gen 4925
+#381 b52 [     0.535] I post : ok mask 0x00, batt 4276 mV, sx127x 0x12
+
+config schema v2, load: loaded, active slot A
+  slot A: ok, schema v2, gen 4925
+  slot B: ok, schema v2, gen 4924
+ota_url            = http://stress.test/3159
+```
+
+1766 + 3159 = 4925: плата завантажила цілий запис №3159, generation і значення узгоджені.
+Записи 3156–3159 плата зробила вже після того, як зник USB-зв'язок із ПК, але ще до втрати
+живлення, тому в консоль вони не потрапили. Обидва слоти цілі, POST = 0x00.
+
+### Розірваний запис ([logs/rover-tear-test-1.0.0.txt](logs/rover-tear-test-1.0.0.txt))
+
+Влучити висмикуванням точно в момент запису NVS важко, тож для гарантованого випадку є
+`config tear-test`. Команда пише в неактивний слот новий блок (`ota_url = http://torn.write/`,
+generation + 1), але лише його першу половину, як при обриві посеред запису, і перезапускає
+плату. Перед тестом `wifi_timeout_s` змінено на 12, щоб було видно, яке значення завантажилось.
+
+```
+> config tear-test
+W cfg  : tear-test: 74 of 148 B into slot B
+...
+W cfg  : recovered from the other slot, slot A gen 1765
+I post : ok mask 0x00
+
+config schema v2, load: recovered from the other slot, active slot A
+  slot A: ok, schema v2, gen 1765
+  slot B: damaged
+ota_url            = https://github.com/RomanLobach/GF_Course/releases/download/hw6-latest/manifest.json
+wifi_timeout_s     = 12
+```
+
+Плата відкинула пошкоджений слот B і стартувала зі старими значеннями зі слота A. Наступне
+збереження (`config set wifi_timeout_s 8`) пішло в слот B і відновило його.
+
+## Результати на 0.2.0 (до тегу, збірка 0.1.0-1-g0d3db36c, Rover `93F5FC`)
+
+### Спроба 2 — з повним журналом ([logs/rover-power-cut-0.2.0-b.txt](logs/rover-power-cut-0.2.0-b.txt))
 
 Останні рядки перед обривом:
 
@@ -62,7 +114,7 @@ ota_url    = http://stress.test/974
 (Generation 1755 у слоті A, видима пізніше в `config show`, — це вже наступне, штатне збереження
 session id після автоматичного хендшейку.)
 
-### Спроба 1 ([logs/rover-power-cut.txt](logs/rover-power-cut.txt))
+### Спроба 1 ([logs/rover-power-cut-0.2.0-a.txt](logs/rover-power-cut-0.2.0-a.txt))
 
 Журнал рядків `write` не зберігся (скрипт тоді писав файл лише наприкінці). Stress стартував із
 generation 40; після ввімкнення — `loaded, slot A gen 779`, `ota_url = http://stress.test/739`:
@@ -70,5 +122,5 @@ generation 40; після ввімкнення — `loaded, slot A gen 779`, `ot
 
 ## Висновок
 
-В обох спробах плата стартувала зі старим коректним значенням (останнім повністю записаним), без
+У всіх трьох обривах живлення і в тесті з розірваним записом плата стартувала зі старим коректним значенням (останнім повністю записаним), без
 частково записаного конфігу й без помилок самотесту. Очікуваний результат підтверджено.

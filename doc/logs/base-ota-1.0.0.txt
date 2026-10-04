@@ -1,0 +1,134 @@
+### [оновлення 0.4.0 -> 1.0.0 з GitHub Releases (hw6-latest): конфіг до, ota update, міграція schema 1 -> 2, version/post/config після]
+ets Jun  8 2016 00:22:57
+
+rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 188777542, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:1184
+load:0x40078000,len:13232
+load:0x40080400,len:3028
+entry 0x400805e4
+#155 b18 [     0.444] I boot : fw 0.4.0 base
+#156 b18 [     0.445] I boot : git 9d3e6d26, reset power-on, app1
+#157 b18 [     0.453] I cfg  : loaded, slot B gen 12
+#158 b18 [     0.493] I post : ok mask 0x00, batt 4308 mV, sx127x 0x12
+
+> version
+ttgo-lora-bench 0.4.0
+  git:       9d3e6d26
+  built:     2026-10-04 15:42 (commit date)
+  role:      base
+  device:    93050C
+  partition: app1
+  reset:     power-on
+  uptime:    2 s
+  chip:      ESP32 rev 1, flash 4096 KB, free heap 251476 B
+
+> config show
+config schema v1, load: loaded, active slot B
+  slot A: ok, schema v1, gen 11
+  slot B: ok, schema v1, gen 12
+session_id = 0002
+             range 0..9999, read-only
+             last session id (reset only from the viewer, with the logs)
+log_level  = 2 (info)
+             range 0..3, default 2
+             system log level at boot: 0 error, 1 warn, 2 info, 3 debug
+ota_url    = https://github.com/RomanLobach/GF_Course/releases/download/hw6-latest/manifest.json
+             length 10..128, default: GitHub hw6-latest
+             update manifest URL (http:// or https://)
+
+> ota update
+#159 b18 [     6.778] I wifi : connecting to network #1 (saved)
+#160 b18 [     6.779] I ota  : update started
+started - progress: `ota status` / `log`
+#161 b18 [     7.357] I wifi : connected, ip 192.168.1.126
+#162 b18 [    19.758] I ota  : downloading 1.0.0, 1155216 B
+#163 b18 [    39.715] I ota  : installed 1.0.0, rebooting
+ets Jun  8 2016 00:22:57
+
+rst:0xc (SW_CPU_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 188777542, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:1184
+load:0x40078000,len:13232
+load:0x40080400,len:3028
+entry 0x400805e4
+#164 b19 [     0.458] I boot : fw 1.0.0 base
+#165 b19 [     0.459] I boot : git e52120d5, reset software, app0
+#166 b19 [     0.466] I cfg  : migrated schema 1 -> 2
+#167 b19 [     0.473] I cfg  : migrated, slot A gen 13
+#168 b19 [     0.527] I post : ok mask 0x00, batt 4156 mV, sx127x 0x12
+#169 b19 [     0.577] I ota  : new image confirmed in app0
+
+> version
+ttgo-lora-bench 1.0.0
+  git:       e52120d5
+  built:     2026-10-04 16:04 (commit date)
+  role:      base
+  device:    93050C
+  partition: app0
+  reset:     software
+  uptime:    5 s
+  chip:      ESP32 rev 1, flash 4096 KB, free heap 251468 B
+
+> post
+POST ok, mask 0x00 (reset: software)
+  0 power    ok  (4156 mV, min 3300)
+  1 nvs      ok
+  2 radio    ok  (version 0x12)
+  3 oled     ok
+  4 storage  ok
+  5 config   ok
+  6 reset    ok
+  7 forced   ok
+
+> config show
+config schema v2, load: migrated, active slot A
+  slot A: ok, schema v2, gen 13
+  slot B: ok, schema v1, gen 12
+session_id         = 0002
+             range 0..9999, read-only
+             last session id (reset only from the viewer, with the logs)
+log_level          = 2 (info)
+             range 0..3, default 2
+             system log level at boot: 0 error, 1 warn, 2 info, 3 debug
+ota_url            = https://github.com/RomanLobach/GF_Course/releases/download/hw6-latest/manifest.json
+             length 10..128, default: GitHub hw6-latest
+             update manifest URL (http:// or https://)
+wifi_timeout_s     = 8
+             range 3..30, default 8
+             seconds to wait for each Wi-Fi network before the next one
+portal_timeout_min = 10
+             range 1..60, default 10
+             Wi-Fi setup portal closes after this many idle minutes
+
+> log 25
+#145 b17 [   268.441] I porta: open, ap ttgo-lora-bench-93050C
+#146 b17 [   336.290] I porta: network saved to slot 1
+#147 b17 [   351.650] I porta: closed, 1 network(s) saved
+#148 b17 [   358.694] I wifi : connecting to network #1 (saved)
+#149 b17 [   359.213] I wifi : connected, ip 192.168.1.126
+#150 b17 [   427.428] I sess : -> SYNC id=1
+#151 b17 [   438.068] I run  : start MEAS profile=1
+#152 b17 [   477.840] I run  : end how=0
+#153 b17 [   508.146] I wifi : connecting to network #1 (saved)
+#154 b17 [   508.632] I wifi : connected, ip 192.168.1.126
+#155 b18 [     0.444] I boot : fw 0.4.0 base
+#156 b18 [     0.445] I boot : git 9d3e6d26, reset power-on, app1
+#157 b18 [     0.453] I cfg  : loaded, slot B gen 12
+#158 b18 [     0.493] I post : ok mask 0x00, batt 4308 mV, sx127x 0x12
+#159 b18 [     6.778] I wifi : connecting to network #1 (saved)
+#160 b18 [     6.779] I ota  : update started
+#161 b18 [     7.357] I wifi : connected, ip 192.168.1.126
+#162 b18 [    19.758] I ota  : downloading 1.0.0, 1155216 B
+#163 b18 [    39.715] I ota  : installed 1.0.0, rebooting
+#164 b19 [     0.458] I boot : fw 1.0.0 base
+#165 b19 [     0.459] I boot : git e52120d5, reset software, app0
+#166 b19 [     0.466] I cfg  : migrated schema 1 -> 2
+#167 b19 [     0.473] I cfg  : migrated, slot A gen 13
+#168 b19 [     0.527] I post : ok mask 0x00, batt 4156 mV, sx127x 0x12
+#169 b19 [     0.577] I ota  : new image confirmed in app0
+-- end of log --

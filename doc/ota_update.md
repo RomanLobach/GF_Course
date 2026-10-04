@@ -33,18 +33,27 @@
 
 ## Перевірка на платі (Rover, 2026-10-04)
 
-Повні логи — [logs/rover-ota.txt](logs/rover-ota.txt). Локальний сервер:
+Повні логи — [logs/rover-ota-local-0.3.0.txt](logs/rover-ota-local-0.3.0.txt). Локальний сервер:
 `python scripts/ota_server.py --version 9.9.9`, `config set ota_url http://<ПК>:8000/manifest.json`.
 
 | Сценарій | Що зроблено | Результат |
 |---|---|---|
 | Перевірка з GitHub | `ota check` на `hw6-latest` (0.2.0) по HTTPS | маніфест за ~6 с, `up to date` — нічого не ставиться |
-| Сервер недоступний | Mac в іншій мережі | `manifest: http -1`, Wi-Fi вимкнено, радіо відновлено |
 | Встановлення | `ota update`, образ 1 136 624 Б | 8 с завантаження, перезапуск у `app1`, `new image confirmed in app1` |
 | Відкат | образ з `-D FW_FORCE_POST_FAIL` як 9.9.10 | старт у `app0`, POST `0x80` → `rolling back` → старт у `app1`, POST `0x00`, `rejected, rolled back` |
 | Обрив зв'язку | сервер зупинено посеред завантаження | `connection lost at 649468 B`, запис скасовано, пристрій на `app1` |
 | З меню | «Сервіс → Оновити прошивку» | смужка прогресу, `installed 9.9.11` → `new image confirmed in app0` |
 | Скасування з меню | натискання посеред завантаження | `cancelled`, попап «Оновлення не вдалося: скасовано», пристрій на поточній прошивці |
+
+## Оновлення релізів з GitHub (обидві плати)
+
+Починаючи з 0.3.0, кожен наступний реліз ставиться лише по Wi-Fi, командою `ota update` з
+маніфесту `hw6-latest`.
+
+| Оновлення | Base | Rover | Лог |
+|---|---|---|---|
+| 0.3.0 → 0.4.0 | 1 153 712 Б, ~20 с; `new image confirmed in app1`, POST 0x00 | 1 153 088 Б, ~24 с; `new image confirmed in app1`, POST 0x00 | — |
+| 0.4.0 → 1.0.0 | `migrated schema 1 -> 2`, `new image confirmed in app0`, POST 0x00 | те саме | [base](logs/base-ota-1.0.0.txt) · [rover](logs/rover-ota-1.0.0.txt) |
 
 ## Висновки
 
