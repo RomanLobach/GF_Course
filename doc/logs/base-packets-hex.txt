@@ -1,0 +1,49 @@
+> log level debug
+#62 b12 [    85.280] I log  : level set to debug
+log level: debug
+#63 b12 [   183.611] D pkt  : rx 01 01 85 00 rssi -4 snr 8
+#64 b12 [   183.614] D pkt  : tx 01 02 85 00
+#65 b12 [   185.815] D pkt  : tx 01 02 85 00
+#66 b12 [   186.257] D pkt  : rx 01 03 86 00 rssi -4 snr 9
+#67 b12 [   186.266] D cfg  : saved slot A gen 9
+#68 b12 [   186.266] I sess : -> SYNC id=134
+#69 b12 [   186.269] D pkt  : tx 01 03 86 00
+#70 b12 [   191.698] D pkt  : rx 01 03 86 00 rssi -5 snr 11
+#71 b12 [   193.458] D pkt  : rx 12 01 00 00 rssi -4 snr 11
+#72 b12 [   193.460] D pkt  : tx 13 01 B6 12
+#73 b12 [   196.256] D pkt  : tx 01 03 86 00
+#74 b12 [   198.456] I run  : start TEST profile=1
+#75 b12 [   200.739] D pkt  : rx 20 00 01 04 rssi -6 snr 10
+#76 b12 [   200.742] D pkt  : tx 21 10 16 03
+#77 b12 [   201.750] D run  : slot p=1 dec=0 next=1 miss=0 rx=4
+#78 b12 [   204.012] D pkt  : rx 20 00 01 04 rssi -6 snr 10
+#79 b12 [   204.015] D pkt  : tx 21 10 16 03
+#80 b12 [   205.028] D run  : slot p=1 dec=0 next=1 miss=0 rx=4
+#81 b12 [   205.421] D pkt  : rx 20 00 21 01 rssi -6 snr 11
+#82 b12 [   205.424] D pkt  : tx 21 20 14 03
+#83 b12 [   206.430] D run  : slot p=1 dec=0 next=2 miss=0 rx=1
+#84 b12 [   208.496] D pkt  : rx 20 00 02 04 rssi -5 snr 10
+#85 b12 [   208.499] D pkt  : tx 21 20 15 03
+#86 b12 [   209.516] D run  : slot p=2 dec=0 next=2 miss=0 rx=4
+#87 b12 [   211.597] D pkt  : rx 20 00 32 04 rssi -6 snr 9
+#88 b12 [   211.600] D pkt  : tx 21 30 13 03
+#89 b12 [   212.614] D run  : slot p=2 dec=0 next=3 miss=0 rx=4
+#90 b12 [   221.945] D pkt  : rx 20 00 53 01 rssi -5 snr 11
+#91 b12 [   221.949] D pkt  : tx 21 50 15 03
+#92 b12 [   222.965] D run  : slot p=3 dec=0 next=5 miss=0 rx=1
+#93 b12 [   225.047] D pkt  : rx 20 00 05 04 rssi -6 snr 11
+#94 b12 [   225.050] D pkt  : tx 21 50 16 03
+#95 b12 [   226.097] D run  : slot p=5 dec=0 next=5 miss=0 rx=4
+#96 b12 [   228.151] D pkt  : rx 20 00 05 04 rssi -6 snr 10
+#97 b12 [   228.154] D pkt  : tx 21 50 16 03
+#98 b12 [   229.208] D run  : slot p=5 dec=0 next=5 miss=0 rx=4
+#99 b12 [   231.255] D pkt  : rx 20 00 05 04 rssi -5 snr 10
+#100 b12 [   231.258] D pkt  : tx 21 50 16 03
+#101 b12 [   232.304] D run  : slot p=5 dec=0 next=5 miss=0 rx=4
+#102 b12 [   232.638] D pkt  : rx 20 01 05 01 rssi -6 snr 10
+#103 b12 [   232.642] D pkt  : tx 21 52 14 03
+#104 b12 [   233.662] D run  : slot p=5 dec=2 next=5 miss=0 rx=1
+#105 b12 [   233.663] I run  : end how=1
+#106 b12 [   233.763] D pkt  : tx 01 03 86 00
+#107 b12 [   239.192] D pkt  : rx 01 03 86 00 rssi -6 snr 11
+#108 b12 [   243.739] D pkt  : tx 01 03 86 00

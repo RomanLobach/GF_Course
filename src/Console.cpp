@@ -43,12 +43,22 @@ void Console::loopTask() {
 }
 
 void Console::execute(char *line, Context &ctx) {
+  // Split on spaces/tabs in place; "double quotes" keep spaces inside one argument
+  // (Wi-Fi SSIDs). An unterminated quote runs to the end of the line.
   char *argv[MAX_ARGS];
   int argc = 0;
-  char *save = nullptr;
-  for (char *tok = strtok_r(line, " \t", &save); tok && argc < static_cast<int>(MAX_ARGS);
-       tok = strtok_r(nullptr, " \t", &save)) {
-    argv[argc++] = tok;
+  char *p = line;
+  while (*p && argc < static_cast<int>(MAX_ARGS)) {
+    while (*p == ' ' || *p == '\t') p++;
+    if (!*p) break;
+    if (*p == '"') {
+      argv[argc++] = ++p;
+      while (*p && *p != '"') p++;
+    } else {
+      argv[argc++] = p;
+      while (*p && *p != ' ' && *p != '\t') p++;
+    }
+    if (*p) *p++ = '\0';
   }
   if (argc == 0) return;
 

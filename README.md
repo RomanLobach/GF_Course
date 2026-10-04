@@ -72,9 +72,14 @@ waterfall для кожного профілю.
 
 ## Інструкція
 
-1. Дані Wi-Fi (налаштовується одноразово):
-   `cp include/secrets.example.h include/secrets.h` і вписати SSID/пароль.
-2. Прошивка: `pio run -e base -t upload`, `pio run -e rover -t upload`.
+1. Прошивка: `pio run -e base -t upload`, `pio run -e rover -t upload`. На старті пристрій
+   проходить самотест (живлення, NVS, радіо, OLED, flash, конфіг, причина попереднього
+   перезапуску): «Самотест OK» зникає сам, збій лишається на екрані до натискання. Деталі —
+   команда `post`.
+2. Wi-Fi (одноразово на кожному пристрої): у консолі `wifi add <ssid> <пароль>` (SSID із
+   пробілами — у лапках), до 4 мереж, зберігаються в NVS і переживають перепрошивку. Для
+   локальних збірок є ще `include/secrets.h` (`cp include/secrets.example.h include/secrets.h`) —
+   ці мережі пробуються після збережених; релізні образи їх не містять.
 3. На будь-якому пристрої: меню → «Синхронізація [почати]» → після `SYNC` → «Вимірювання [почати]»
    або «Тест частот [почати]» (профіль — обертанням енкодера).
 4. Логи: `IDLE` → «Логи → Передати по Wi-Fi» → відкрити
@@ -82,9 +87,15 @@ waterfall для кожного профілю.
 5. Waterfall (пристрої в TEST):
    `cd radioanalysis/lora_waterfall && ~/radioconda/bin/python run_all.py --open`.
 6. Консоль: `pio device monitor -e base` (або `-e rover`) → `help`. Команди: `version`,
-   `log [n|all]`, `log level error|warn|info|debug`, `log clear`, `log stats`, `reboot`.
-   У режимі Wi-Fi ті самі команди — `POST /cmd` (тіло — рядок команди), а також
-   `GET /version`, `GET /syslog`.
+   `log [n|all]`, `log level error|warn|info|debug`, `log clear`, `log stats`, `reboot`,
+   `post`, `wifi list|add|del`, `config [show]`, `config get|set <ключ> [значення]`,
+   `config reset`. Параметри конфігурації: `log_level` (рівень системного логу після старту,
+   0–3 або `error`…`debug`) і `ota_url` (адреса маніфесту оновлень); `session_id` — лише для
+   читання. Конфіг зберігається у двох копіях із CRC, тож обрив живлення під час запису не
+   губить попередні значення.
+   У режимі Wi-Fi ті самі команди — `POST /cmd` (тіло — рядок команди; `wifi add/del` — лише
+   з Serial), а також `GET /version`, `GET /syslog`. `GET /info` показує й результат
+   самотесту (`post` — маска збоїв, 0 = OK) та напругу акумулятора.
 
 ## Версії та релізи
 
@@ -93,6 +104,16 @@ waterfall для кожного профілю.
 передає в збірку параметрами `-D`. Реліз — це push тегу: GitHub Actions збирає обидві ролі з
 чистого дерева й публікує [Release](https://github.com/RomanLobach/GF_Course/releases) з образами
 та `manifest.json` (розмір і SHA-256 кожного образу). Зміни — у [CHANGELOG.md](CHANGELOG.md).
+
+## Польова готовність
+
+- [Специфікація протоколу](doc/protocol_spec.md) — формат кадрів, типи повідомлень, таймаути,
+  реальні пакети в HEX із розбором.
+- [Польовий чекліст](doc/field_checklist.md) — 12 перевірок «що → як → критерій».
+- [Експеримент з обривом живлення](doc/power_cut_experiment.md) — плата стартує з останнім
+  повністю записаним конфігом.
+- [Логи консолі з плат](doc/logs/) — `version`, `post`, `config get/set/reset`, міграція конфігу,
+  межі значень, прохід вимірювання, службові пакети.
 
 ## Результати
 

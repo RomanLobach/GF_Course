@@ -18,11 +18,11 @@
 #pragma once
 
 #include <Arduino.h>
-#include <Preferences.h>
 #include "Config.h"
 #include "Protocol.h"
 #include "RadioManager.h"
 #include "FlashLog.h"
+#include "ConfigStore.h"
 
 class SessionState {
 public:
@@ -65,7 +65,7 @@ public:
     float snr = 0;
   };
 
-  SessionState(RadioManager &radio, FlashLog &log);
+  SessionState(RadioManager &radio, FlashLog &log, ConfigStore &config);
 
   void begin();
   void update();
@@ -101,10 +101,10 @@ private:
 
   RadioManager &radio_;
   FlashLog &log_;
-  Preferences prefs_;
+  ConfigStore &config_;
 
   Protocol::DeviceState state_ = Protocol::DeviceState::Idle;
-  uint16_t sessionId_ = 0;     // last used session id, persisted in NVS
+  uint16_t sessionId_ = 0;     // last used session id, persisted through ConfigStore
   uint32_t syncedAtMs_ = 0;    // local session timer reference
   uint32_t enteredSyncMs_ = 0; // for the duplicate-SEEN_YOU grace window
   float lastRssi_ = 0;

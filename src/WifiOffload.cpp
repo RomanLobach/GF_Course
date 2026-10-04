@@ -2,6 +2,7 @@
 #include "Config.h"
 #include "SysLog.h"
 #include "Version.h"
+#include "Post.h"
 
 namespace {
 // Print adapter that streams into a chunked HTTP response in small blocks.
@@ -33,19 +34,37 @@ WifiOffload::WifiOffload(FlashLog &log, SessionState &session, Console &console)
   : log_(log), session_(session), console_(console) {}
 
 void WifiOffload::tryNextCredential() {
-  const Config::WifiCredential &cred = Config::WIFI_CREDENTIALS[credentialIndex_];
-  WiFi.begin(cred.ssid, cred.password);
+  const WifiStore::Network &net = candidates_[credentialIndex_];
+  WiFi.begin(net.ssid, net.password);
   attemptStartMs_ = millis();
-  SLOG_I("wifi", "connecting to '%s'", cred.ssid);
+  // No SSID in the log: /syslog is readable by anyone on the network.
+  SLOG_I("wifi", "connecting to network #%u (%s)", static_cast<unsigned>(credentialIndex_ + 1),
+         credentialIndex_ < savedCount_ ? "saved" : "built-in");
 }
 
 void WifiOffload::start() {
   phase_ = Phase::Connecting;
   credentialIndex_ = 0;
   serverStarted_ = false;
+
+  candidateCount_ = 0;
+  for (size_t i = 0; i < Config::WIFI_STORED_MAX; i++) {
+    if (WifiStore::read(i, candidates_[candidateCount_])) candidateCount_++;
+  }
+  savedCount_ = candidateCount_;
+  for (const auto &cred : Config::WIFI_CREDENTIALS) {
+    if (cred.ssid[0] == '\0') continue; // placeholder entry of a build without secrets.h
+    bool duplicate = false;
+    for (size_t i = 0; i < savedCount_; i++) duplicate |= strcmp(candidates_[i].ssid, cred.ssid) == 0;
+    if (duplicate) continue;
+    WifiStore::Network &net = candidates_[candidateCount_++];
+    strlcpy(net.ssid, cred.ssid, sizeof(net.ssid));
+    strlcpy(net.password, cred.password, sizeof(net.password));
+  }
+
   WiFiClass::mode(WIFI_STA);
-  if (Config::WIFI_CREDENTIAL_COUNT == 0) {
-    SLOG_W("wifi", "no networks configured");
+  if (candidateCount_ == 0) {
+    SLOG_W("wifi", "no networks configured (wifi add)");
     phase_ = Phase::Failed;
     return;
   }
@@ -74,7 +93,7 @@ void WifiOffload::loopTask() {
         }
       } else if (millis() - attemptStartMs_ >= Config::WIFI_CONNECT_TIMEOUT_MS) {
         credentialIndex_++;
-        if (credentialIndex_ >= Config::WIFI_CREDENTIAL_COUNT) {
+        if (credentialIndex_ >= candidateCount_) {
           SLOG_W("wifi", "no network reachable");
           phase_ = Phase::Failed;
         } else {
@@ -99,6 +118,8 @@ void WifiOffload::stop() {
   }
   WiFi.disconnect(true);
   WiFiClass::mode(WIFI_OFF);
+  memset(candidates_, 0, sizeof(candidates_)); // don't keep passwords in RAM longer than needed
+  candidateCount_ = 0;
   phase_ = Phase::Idle;
 }
 
@@ -107,7 +128,7 @@ String WifiOffload::statusText() const {
     case Phase::Idle:
       return "";
     case Phase::Connecting:
-      return String("Підключення: ") + Config::WIFI_CREDENTIALS[credentialIndex_].ssid;
+      return String("Підключення: ") + candidates_[credentialIndex_].ssid;
     case Phase::Connected:
       return String("IP: ") + WiFi.localIP().toString() + "\nНатисніть, щоб вийти";
     case Phase::Failed:
@@ -134,11 +155,14 @@ void WifiOffload::handleLogsCsv() {
 }
 
 void WifiOffload::handleInfo() {
-  char body[224];
+  char body[288];
+  const Post::Result &post = Post::result();
   snprintf(body, sizeof(body),
-           "{\"role\":\"%s\",\"version\":\"%s\",\"device\":\"%s\",\"sessionId\":%u,\"records\":%u,\"fillPercent\":%u}",
+           "{\"role\":\"%s\",\"version\":\"%s\",\"device\":\"%s\",\"sessionId\":%u,\"records\":%u,\"fillPercent\":%u,"
+           "\"post\":%u,\"battMv\":%u}",
            Version::roleName(), Version::FIRMWARE, Version::deviceId(), static_cast<unsigned>(session_.sessionId()),
-           static_cast<unsigned>(log_.recordCount()), static_cast<unsigned>(log_.fillPercent()));
+           static_cast<unsigned>(log_.recordCount()), static_cast<unsigned>(log_.fillPercent()),
+           static_cast<unsigned>(post.mask), static_cast<unsigned>(post.batteryMv));
   server_.sendHeader("Access-Control-Allow-Origin", "*");
   server_.send(200, "application/json", body);
 }

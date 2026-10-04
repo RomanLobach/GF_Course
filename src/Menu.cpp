@@ -56,8 +56,9 @@ const char *MenuController::unavailableMessage(const Page page, const uint8_t in
   return "Недоступно під час вимірювання";
 }
 
-void MenuController::showPopup(const char *text) {
+void MenuController::showPopup(const char *text, const bool sticky) {
   popupActive_ = true;
+  popupSticky_ = sticky;
   std::strncpy(popupText_, text, sizeof(popupText_) - 1);
   popupText_[sizeof(popupText_) - 1] = 0;
   popupUntilMs_ = millis() + Config::UI_POPUP_DURATION_MS;
@@ -248,7 +249,7 @@ const char *MenuController::noticeText(const SessionState::Notice n) {
 void MenuController::tick() {
   wifi_.loopTask();
 
-  if (popupActive_ && static_cast<int32_t>(millis() - popupUntilMs_) >= 0) {
+  if (popupActive_ && !popupSticky_ && static_cast<int32_t>(millis() - popupUntilMs_) >= 0) {
     popupActive_ = false;
   }
 

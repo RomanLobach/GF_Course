@@ -22,6 +22,8 @@ public:
   RadioManager();
 
   bool begin();
+  // SX127x version register (0x12 for the SX1276), for the self-test.
+  int16_t chipVersion() { return radio_.getChipVersion(); }
 
   // Service channel: heartbeat + all control traffic (4-byte packets).
   void useServiceChannel();

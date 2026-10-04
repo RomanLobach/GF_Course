@@ -1,5 +1,7 @@
 // Text command console: one command registry, two front-ends.
 //
+// Arguments are split on spaces; "double quotes" group an argument that contains spaces.
+//
 // - Serial: loopTask() reads whatever bytes are already buffered (never waits), assembles a
 //   line, runs it. Commands print into a Print&; long listings (log dump) are paced through
 //   the job hook so a single command never holds the protocol core for longer than the UART

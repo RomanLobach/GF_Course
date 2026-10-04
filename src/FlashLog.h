@@ -21,6 +21,7 @@ enum class LogRecordType : uint8_t {
   SessionEvent = 0, // see LogEventKind
   Bench = 1,        // one MEAS bench packet (Base: sent, Rover: received/lost)
   TestSummary = 2,  // one TEST burst summary
+  Post = 3,         // power-on self-test result, once per boot (eventKind = Post mask)
 };
 
 enum class LogEventKind : uint8_t {
@@ -38,7 +39,7 @@ struct LogRecord {
   uint8_t direction;      // Bench only: 0 = TX, 1 = RX
   uint8_t type;           // LogRecordType
   uint8_t configIndex;    // 0 for session events, 1..6 for bench packets
-  uint8_t eventKind;      // SessionEvent: LogEventKind; TestSummary: packets sent in the burst
+  uint8_t eventKind;      // SessionEvent: LogEventKind; TestSummary: packets sent in the burst; Post: mask
   uint32_t sessionTimeMs; // relative to the local session timer
   uint16_t size;          // Bench only: packet size in bytes
   int16_t rssi;           // dBm, or INT16_MIN if not applicable

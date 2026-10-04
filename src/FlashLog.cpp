@@ -150,20 +150,24 @@ bool FlashLog::nextCsvLine(String &outLine) {
   const auto type = static_cast<LogRecordType>(rec.type);
   const bool isEvent = type == LogRecordType::SessionEvent;
   const bool isTest = type == LogRecordType::TestSummary;
-  const char *typeName = isEvent ? "EVT" : isTest ? "TEST" : "BENCH";
+  const bool isPost = type == LogRecordType::Post;
+  const char *typeName = isEvent ? "EVT" : isTest ? "TEST" : isPost ? "POST" : "BENCH";
+  const bool noPacket = isEvent || isPost; // no direction/config/size columns
+  char postMask[8] = {};
+  if (isPost) snprintf(postMask, sizeof(postMask), "0x%02X", rec.eventKind);
 
   outLine = String(sessionIdBuf) + "," +
             String(rec.seq) + "," +
-            (isEvent ? "" : rec.direction == 0 ? "TX" : "RX") + "," +
+            (noPacket ? "" : rec.direction == 0 ? "TX" : "RX") + "," +
             typeName + "," +
-            (isEvent ? "" : configLabel(rec.configIndex)) + "," +
+            (noPacket ? "" : configLabel(rec.configIndex)) + "," +
             fmtSessionTime(rec.sessionTimeMs) + "," +
-            (isEvent ? "" : String(rec.size)) + "," +
+            (noPacket ? "" : String(rec.size)) + "," +
             (rec.rssi == NO_RSSI ? "" : String(rec.rssi)) + "," +
             (rec.snrTenths == NO_SNR ? "" : String(static_cast<float>(rec.snrTenths) / 10.0f, 1)) + "," +
             deviceStatusName(rec.deviceStatus) + "," +
             (type == LogRecordType::Bench ? (rec.received ? "1" : "0") : "") + "," +
-            (isEvent ? eventKindName(rec.eventKind) : "") + "," +
+            (isEvent ? eventKindName(rec.eventKind) : isPost ? postMask : "") + "," +
             (rec.txTimeUs == 0 ? "" : String(static_cast<float>(rec.txTimeUs) / 1000.0f, 2)) + "," +
             (isTest ? String(rec.eventKind) : "") + "," +
             (isTest && rec.received != 0xFF ? String(rec.received) : "");

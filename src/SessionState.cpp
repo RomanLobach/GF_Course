@@ -32,7 +32,8 @@ uint8_t wrapProfile(const int p) {
 }
 } // namespace
 
-SessionState::SessionState(RadioManager &radio, FlashLog &log) : radio_(radio), log_(log) {}
+SessionState::SessionState(RadioManager &radio, FlashLog &log, ConfigStore &config)
+  : radio_(radio), log_(log), config_(config) {}
 
 // ============================================================================
 // Lifecycle
@@ -272,15 +273,11 @@ void SessionState::notify(const Notice n) {
 }
 
 void SessionState::loadSessionId() {
-  prefs_.begin(Config::NVS_NAMESPACE, true);
-  sessionId_ = prefs_.getUShort(Config::NVS_KEY_SESSION_ID, 0);
-  prefs_.end();
+  sessionId_ = config_.get().sessionId;
 }
 
 void SessionState::saveSessionId() {
-  prefs_.begin(Config::NVS_NAMESPACE, false);
-  prefs_.putUShort(Config::NVS_KEY_SESSION_ID, sessionId_);
-  prefs_.end();
+  if (!config_.setSessionId(sessionId_)) SLOG_E("sess", "session id %u not saved", sessionId_);
 }
 
 uint16_t SessionState::nextId(const uint16_t id) {
@@ -445,7 +442,9 @@ void SessionState::queueHeartbeatReply(const HbState hs, const uint32_t now) {
 bool SessionState::sendService(const ServicePacket &pkt) {
   uint8_t raw[Protocol::SERVICE_PACKET_SIZE];
   Protocol::encodeServicePacket(pkt, raw);
-  return radio_.startTransmit(raw, sizeof(raw));
+  const bool ok = radio_.startTransmit(raw, sizeof(raw));
+  if (ok) SLOG_D("pkt", "tx %02X %02X %02X %02X", raw[0], raw[1], raw[2], raw[3]);
+  return ok;
 }
 
 void SessionState::serviceTx(const uint32_t now) {
@@ -540,6 +539,8 @@ void SessionState::pollService(const uint32_t now) {
   if (!radio_.poll(buf, sizeof(buf), len, rssi, snr)) return;
   ServicePacket pkt{};
   if (!Protocol::decodeServicePacket(buf, len, pkt)) return;
+  SLOG_D("pkt", "rx %02X %02X %02X %02X rssi %d snr %d", buf[0], buf[1], buf[2], buf[3], static_cast<int>(rssi),
+         static_cast<int>(snr));
   lastRssi_ = rssi;
   lastSnr_ = snr;
   handleService(pkt, now);

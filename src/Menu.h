@@ -22,6 +22,9 @@ public:
 
   DisplaySnapshot buildSnapshot() const;
 
+  // Start-up self-test result: a failure stays on screen until a press, OK closes by itself.
+  void showSelfTest(const char *text, bool failed) { showPopup(text, failed); }
+
 private:
   SessionState &session_;
   FlashLog &log_;
@@ -38,6 +41,7 @@ private:
   bool popupActive_ = false;
   char popupText_[96] = {};
   uint32_t popupUntilMs_ = 0;
+  bool popupSticky_ = false; // closes only on a press
 
   bool wifiScreenActive_ = false;
 
@@ -47,7 +51,7 @@ private:
   void selectItem(uint8_t index);
   void selectMain(uint8_t index);
   void selectLogs(uint8_t index);
-  void showPopup(const char *text);
+  void showPopup(const char *text, bool sticky = false);
   void closeMenu();
   static const char *noticeText(SessionState::Notice n);
 };

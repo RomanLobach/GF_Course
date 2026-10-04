@@ -1,0 +1,119 @@
+### [reset]
+ets Jun  8 2016 00:22:57
+
+rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 188777542, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:1184
+load:0x40078000,len:13232
+load:0x40080400,len:3028
+entry 0x400805e4
+#59 b13 [     0.475] I boot : fw 0.1.0-1-g0d3db36c-dirty rover
+#60 b13 [     0.476] I boot : git 0d3db36c+dirty, reset power-on, app0
+#61 b13 [     0.483] I cfg  : loaded, slot A gen 5
+#62 b13 [     0.542] I post : ok mask 0x00, batt 4278 mV, sx127x 0x12
+
+> version
+ttgo-lora-bench 0.1.0-1-g0d3db36c-dirty
+  git:       0d3db36c (dirty)
+  built:     2026-09-29 21:44 (commit date)
+  role:      rover
+  device:    93F5FC
+  partition: app0
+  reset:     power-on
+  uptime:    5 s
+  chip:      ESP32 rev 1, flash 4096 KB, free heap 266380 B
+
+> config get log_level
+log_level  = 2 (info)
+             range 0..3, default 2
+             system log level at boot: 0 error, 1 warn, 2 info, 3 debug
+
+> config set log_level 7
+error: value out of range:
+log_level  = 2 (info)
+             range 0..3, default 2
+             system log level at boot: 0 error, 1 warn, 2 info, 3 debug
+
+> config set log_level verbose
+error: value out of range:
+log_level  = 2 (info)
+             range 0..3, default 2
+             system log level at boot: 0 error, 1 warn, 2 info, 3 debug
+
+> config set ota_url ftp://x
+error: value out of range:
+ota_url    = https://github.com/RomanLobach/GF_Course/releases/download/hw6-latest/manifest.json
+             length 10..128, default: GitHub hw6-latest
+             update manifest URL (http:// or https://)
+
+> config set session_id 5
+error: 'session_id' is read-only
+
+> config set nosuch 1
+error: unknown key 'nosuch'
+
+> config set log_level debug
+#63 b13 [    23.569] I cfg  : log_level changed
+log_level  = 3 (debug)
+             range 0..3, default 2
+             system log level at boot: 0 error, 1 warn, 2 info, 3 debug
+
+> config show
+config schema v1, load: loaded, active slot B
+  slot A: ok, schema v1, gen 5
+  slot B: ok, schema v1, gen 6
+session_id = 0128
+             range 0..9999, read-only
+             last session id (reset only from the viewer, with the logs)
+log_level  = 3 (debug)
+             range 0..3, default 2
+             system log level at boot: 0 error, 1 warn, 2 info, 3 debug
+ota_url    = https://github.com/RomanLobach/GF_Course/releases/download/hw6-latest/manifest.json
+             length 10..128, default: GitHub hw6-latest
+             update manifest URL (http:// or https://)
+
+> reboot
+#64 b13 [    28.737] W sys  : reboot requested from console
+rebooting...
+ets Jun  8 2016 00:22:57
+
+rst:0xc (SW_CPU_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 188777542, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:1184
+load:0x40078000,len:13232
+load:0x40080400,len:3028
+entry 0x400805e4
+#65 b14 [     0.486] I boot : fw 0.1.0-1-g0d3db36c-dirty rover
+#66 b14 [     0.487] I boot : git 0d3db36c+dirty, reset software, app0
+#67 b14 [     0.494] I cfg  : loaded, slot B gen 6
+#68 b14 [     0.561] I post : ok mask 0x00, batt 4230 mV, sx127x 0x12
+
+
+> config get log_level
+log_level  = 3 (debug)
+             range 0..3, default 2
+             system log level at boot: 0 error, 1 warn, 2 info, 3 debug
+
+> config reset
+#69 b14 [    10.301] I cfg  : reset to defaults
+#70 b14 [    10.311] D cfg  : saved slot A gen 7
+config reset to defaults (session id kept)
+
+> config show
+config schema v1, load: loaded, active slot A
+  slot A: ok, schema v1, gen 7
+  slot B: ok, schema v1, gen 6
+session_id = 0128
+             range 0..9999, read-only
+             last session id (reset only from the viewer, with the logs)
+log_level  = 2 (info)
+             range 0..3, default 2
+             system log level at boot: 0 error, 1 warn, 2 info, 3 debug
+ota_url    = https://github.com/RomanLobach/GF_Course/releases/download/hw6-latest/manifest.json
+             length 10..128, default: GitHub hw6-latest
+             update manifest URL (http:// or https://)
+

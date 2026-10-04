@@ -1,0 +1,20 @@
+> log all
+#71 b14 [   224.697] I sess : -> SYNC id=129
+#72 b14 [   233.101] I run  : start MEAS profile=1
+#73 b14 [   272.873] I run  : end how=0
+-- end of log --
+
+> config show
+config schema v1, load: loaded, active slot A
+  slot A: ok, schema v1, gen 9
+  slot B: ok, schema v1, gen 8
+session_id = 0130
+             range 0..9999, read-only
+             last session id (reset only from the viewer, with the logs)
+log_level  = 2 (info)
+             range 0..3, default 2
+             system log level at boot: 0 error, 1 warn, 2 info, 3 debug
+ota_url    = https://github.com/RomanLobach/GF_Course/releases/download/hw6-latest/manifest.json
+             length 10..128, default: GitHub hw6-latest
+             update manifest URL (http:// or https://)
+

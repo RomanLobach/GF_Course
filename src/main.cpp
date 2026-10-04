@@ -23,6 +23,8 @@
 #include "Version.h"
 #include "Console.h"
 #include "SystemCommands.h"
+#include "ConfigStore.h"
+#include "Post.h"
 
 namespace {
 QueueHandle_t g_uiEventQueue;
@@ -30,7 +32,8 @@ QueueHandle_t g_displaySnapshotQueue;
 
 RadioManager g_radio;
 FlashLog g_flashLog;
-SessionState g_session(g_radio, g_flashLog);
+ConfigStore g_config;
+SessionState g_session(g_radio, g_flashLog, g_config);
 Console g_console;
 WifiOffload g_wifiOffload(g_flashLog, g_session, g_console);
 MenuController g_menu(g_session, g_flashLog, g_wifiOffload, g_radio);
@@ -75,6 +78,21 @@ void displayTaskFunc(void *) {
     display.render(lastSnap);
   }
 }
+
+// One POST record per boot in the benchmark log, so the CSV shows which runs followed a
+// degraded start.
+void logSelfTest() {
+  const Post::Result &post = Post::result();
+  LogRecord rec{};
+  rec.sessionId = g_session.sessionId();
+  rec.type = static_cast<uint8_t>(LogRecordType::Post);
+  rec.eventKind = post.mask;
+  rec.size = post.batteryMv;
+  rec.rssi = FlashLog::NO_RSSI;
+  rec.snrTenths = FlashLog::NO_SNR;
+  rec.deviceStatus = static_cast<uint8_t>(Protocol::DeviceState::Idle);
+  g_flashLog.logEvent(rec);
+}
 } // namespace
 
 void setup() {
@@ -88,18 +106,28 @@ void setup() {
          Version::resetReasonName(), Version::runningPartition());
   if (!sysLogOk) SLOG_E("boot", "syslog file unavailable, RAM only");
 
+  const bool nvsOk = g_config.begin();
+#if !defined(APP_DEBUG_SERIAL) // a debug build keeps DEBUG regardless of the stored level
+  SysLog::setLevel(static_cast<LogLevel>(g_config.get().logLevel));
+#endif
+
   g_uiEventQueue = xQueueCreate(Config::UI_EVENT_QUEUE_LEN, sizeof(UiEvent));
   g_displaySnapshotQueue = xQueueCreate(1, sizeof(DisplaySnapshot));
 
-  if (!g_radio.begin()) {
-    SLOG_E("boot", "radio init failed");
-  }
-  if (!g_flashLog.begin()) {
-    SLOG_E("boot", "flash log init failed");
-  }
+  const bool radioOk = g_radio.begin();
+  if (!radioOk) SLOG_E("boot", "radio init failed");
+  const bool flashLogOk = g_flashLog.begin();
+  if (!flashLogOk) SLOG_E("boot", "flash log init failed");
   g_session.begin();
 
-  SystemCommands::registerAll(g_console);
+  // Before the UI tasks: POST probes the OLED on I2C while nobody else owns the bus.
+  Post::run({radioOk, g_radio.chipVersion(), sysLogOk && flashLogOk, nvsOk, g_config.healthy()});
+  logSelfTest();
+  char selfTest[sizeof(DisplaySnapshot::text)];
+  Post::describe(selfTest, sizeof(selfTest));
+  g_menu.showSelfTest(selfTest, Post::result().mask != 0);
+
+  SystemCommands::registerAll(g_console, g_config);
 
   xTaskCreatePinnedToCore(inputTaskFunc, "input", Config::UI_TASK_STACK_WORDS, nullptr,
                           Config::UI_TASK_PRIORITY, nullptr, Config::UI_TASK_CORE);

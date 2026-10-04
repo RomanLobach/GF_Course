@@ -161,10 +161,27 @@ struct WifiCredential {
 constexpr WifiCredential WIFI_CREDENTIALS[] = WIFI_SECRETS;
 constexpr size_t WIFI_CREDENTIAL_COUNT = sizeof(WIFI_CREDENTIALS) / sizeof(WIFI_CREDENTIALS[0]);
 constexpr uint32_t WIFI_CONNECT_TIMEOUT_MS = 8000;
+// Networks added from the Serial console (`wifi add`) live in NVS and are tried before the
+// built-in ones - release images carry no secrets.h, so this is how they get Wi-Fi at all.
+constexpr auto WIFI_NVS_NAMESPACE = "ttgo_wifi";
+constexpr size_t WIFI_STORED_MAX = 4;
 
-// ---- NVS (Preferences) ----
-constexpr auto NVS_NAMESPACE = "lora_session";
-constexpr auto NVS_KEY_SESSION_ID = "last_id";
+// ---- Persistent config (NVS, see ConfigStore.h) ----
+// Versioned blob in two slots (A/B) + CRC32; written only when a value changes.
+constexpr auto CFG_NVS_NAMESPACE = "ttgo_cfg";
+// Pre-config firmware kept only the session id here; read once to migrate it, then removed.
+constexpr auto LEGACY_NVS_NAMESPACE = "lora_session";
+constexpr auto LEGACY_NVS_KEY_SESSION_ID = "last_id";
+constexpr size_t OTA_URL_MAX = 128;
+constexpr auto OTA_DEFAULT_MANIFEST_URL =
+  "https://github.com/RomanLobach/GF_Course/releases/download/hw6-latest/manifest.json";
+
+// ---- Power-on self-test (see Post.h) ----
+constexpr int PIN_BATTERY_ADC = 35;          // battery through a 1:2 divider
+constexpr uint32_t BATTERY_DIVIDER = 2;
+// Below ABSENT there is no battery on the divider (USB only) - that's fine, not a failure.
+constexpr uint32_t POST_BATT_ABSENT_MV = 1500;
+constexpr uint32_t POST_BATT_MIN_MV = 3300;  // LiPo nearly empty - radio TX may brown out
 
 // ---- UI tasks (core split) ----
 // radio/protocol stays on the default loop() core (1); encoder/button polling

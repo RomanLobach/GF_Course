@@ -207,7 +207,7 @@
         sessionId,
         seq: parseInt(seq, 10),
         direction,
-        recordKind: type, // 'EVT' | 'BENCH' | 'TEST'
+        recordKind: type, // 'EVT' | 'BENCH' | 'TEST' | 'POST' (event = self-test mask)
         config,
         sessionTime,
         sessionTimeMsNum: parseSessionTimeMs(sessionTime),
@@ -421,8 +421,9 @@
   function renderSessions() {
     const container = document.getElementById('sessions');
     const ids = new Set();
-    baseRows.forEach(r => ids.add(r.sessionId));
-    roverRows.forEach(r => ids.add(r.sessionId));
+    // POST rows (one self-test per boot) belong to no session - they would add empty cards.
+    baseRows.forEach(r => { if (r.recordKind !== 'POST') ids.add(r.sessionId); });
+    roverRows.forEach(r => { if (r.recordKind !== 'POST') ids.add(r.sessionId); });
 
     if (ids.size === 0) {
       container.innerHTML = '<div class="empty-hint">Немає даних — натисни «Завантажити»</div>';
@@ -505,7 +506,9 @@
         const info = await fetchInfo(ip);
         deviceOk[which] = true;
         parts.push((which === 'base' ? 'База' : 'Ровер') + ': ID ' + String(info.sessionId).padStart(4, '0') +
-          ', записів ' + info.records + ', лог ' + info.fillPercent + '%');
+          ', записів ' + info.records + ', лог ' + info.fillPercent + '%' +
+          (info.post === undefined ? '' : info.post === 0 ? ', самотест OK'
+            : ', самотест: збій 0x' + info.post.toString(16).toUpperCase().padStart(2, '0')));
       } catch (e) {
         parts.push((which === 'base' ? 'База' : 'Ровер') + ': немає зв\'язку');
       }
