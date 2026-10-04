@@ -1,0 +1,100 @@
+### [ota update з локального сервера: встановлення й підтвердження нового образу]
+> ota update
+#264 b38 [   440.495] I wifi : connecting to network #1 (saved)
+#265 b38 [   440.497] I ota  : update started
+started - progress: `ota status` / `log`
+#266 b38 [   441.023] I wifi : connected, ip 192.168.1.125
+#267 b38 [   441.107] I ota  : downloading 9.9.9, 1136624 B
+#268 b38 [   449.286] I ota  : installed 9.9.9, rebooting
+> ota status
+running:  0.2.0-dirty (app0)
+manifest: http://192.168.1.45:8000/manifest.json
+state:    installed 9.9.9, rebooting
+#269 b39 [     0.466] I boot : fw 0.2.0-dirty rover
+#270 b39 [     0.467] I boot : git c8592756+dirty, reset software, app1
+#271 b39 [     0.474] I cfg  : loaded, slot B gen 1760
+#272 b39 [     0.558] I post : ok mask 0x00, batt 4258 mV, sx127x 0x12
+#273 b39 [     0.610] I ota  : new image confirmed in app1
+> ota status
+running:  0.2.0-dirty (app1)
+manifest: http://192.168.1.45:8000/manifest.json
+state:    idle
+
+### [демо відкату: образ із FW_FORCE_POST_FAIL не проходить самотест, плата повертається на попередній]
+> ota update
+#274 b39 [   115.729] I wifi : connecting to network #1 (saved)
+#275 b39 [   115.730] I ota  : update started
+started - progress: `ota status` / `log`
+#276 b39 [   116.238] I wifi : connected, ip 192.168.1.125
+#277 b39 [   116.338] I ota  : downloading 9.9.10, 1136624 B
+#278 b39 [   126.885] I ota  : installed 9.9.10, rebooting
+#279 b40 [     0.565] I boot : fw 0.2.0-dirty rover
+#280 b40 [     0.566] I boot : git c8592756+dirty, reset software, app0
+#281 b40 [     0.573] I cfg  : loaded, slot B gen 1760
+#282 b40 [     0.616] E post : FAIL forced
+#283 b40 [     0.617] I post : FAILED mask 0x80, batt 4208 mV, sx127x 0x12
+#284 b40 [     0.619] E ota  : new image rejected (POST failed), rolling back
+#285 b41 [     0.438] I boot : fw 0.2.0-dirty rover
+#286 b41 [     0.439] I boot : git c8592756+dirty, reset software, app1
+#287 b41 [     0.446] I cfg  : loaded, slot B gen 1760
+#288 b41 [     0.495] I post : ok mask 0x00, batt 4254 mV, sx127x 0x12
+#289 b41 [     0.809] W ota  : update in app0 was rejected, previous image kep
+> ota status
+running:  0.2.0-dirty (app1)
+manifest: http://192.168.1.45:8000/manifest.json
+rejected: app0 (rolled back)
+state:    idle
+> post
+POST ok, mask 0x00 (reset: software)
+  0 power    ok  (4254 mV, min 3300)
+  1 nvs      ok
+  2 radio    ok  (version 0x12)
+  3 oled     ok
+  4 storage  ok
+  5 config   ok
+  6 reset    ok
+  7 forced   ok
+
+### [обрив під час завантаження: сервер зупинено на ~60%, запис скасовано, плата лишилась на поточному образі]
+> ota update --force
+#290 b41 [    36.730] I wifi : connecting to network #1 (saved)
+#291 b41 [    36.732] I ota  : update (force) started
+started - progress: `ota status` / `log`
+#292 b41 [    37.286] I wifi : connected, ip 192.168.1.125
+#293 b41 [    37.381] I ota  : downloading 9.9.10, 1136624 B
+#294 b41 [    43.186] E ota  : connection lost at 649468 B
+> ota status
+running:  0.2.0-dirty (app1)
+manifest: http://192.168.1.45:8000/manifest.json
+last:     failed - connection lost at 649468 B
+> post
+POST ok, mask 0x00 (reset: software)
+  0 power    ok  (4254 mV, min 3300)
+  1 nvs      ok
+  2 radio    ok  (version 0x12)
+  3 oled     ok
+  4 storage  ok
+  5 config   ok
+  6 reset    ok
+  7 forced   ok
+
+### [з меню «Сервіс → Оновити прошивку»: встановлення 9.9.11 (b41→b42), потім скасування натисканням посеред завантаження (b42)]
+#295 b41 [   161.774] I wifi : connecting to network #1 (saved)
+#296 b41 [   161.776] I ota  : update started
+#297 b41 [   162.303] I wifi : connected, ip 192.168.1.125
+#298 b41 [   162.507] I ota  : downloading 9.9.11, 1136608 B
+#299 b41 [   172.670] I ota  : installed 9.9.11, rebooting
+#300 b42 [     0.462] I boot : fw 0.2.0-dirty rover
+#301 b42 [     0.463] I boot : git c8592756+dirty, reset software, app0
+#302 b42 [     0.470] I cfg  : loaded, slot B gen 1760
+#303 b42 [     0.540] I post : ok mask 0x00, batt 4186 mV, sx127x 0x12
+#304 b42 [     0.593] I ota  : new image confirmed in app0
+#305 b42 [    23.908] I wifi : connecting to network #1 (saved)
+#306 b42 [    23.909] I ota  : update started
+#307 b42 [    24.442] I wifi : connected, ip 192.168.1.125
+#308 b42 [    24.911] I ota  : downloading 9.9.11, 1136608 B
+#309 b42 [    27.761] W ota  : cancelled
+> ota status
+running:  0.2.0-dirty (app0)
+manifest: http://192.168.1.45:8000/manifest.json
+last:     failed - cancelled

@@ -6,6 +6,24 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-04
+
+### Додано
+- Оновлення прошивки по Wi-Fi з GitHub Releases: `manifest.json` (HTTPS, вшиті кореневі
+  сертифікати), перевірка проєкту, ролі й версії, потоковий запис у неактивний розділ з
+  перевіркою SHA-256 і розміру; при збої чи обриві — скасування без зміни поточної прошивки.
+  Консоль: `ota [status]`, `ota check`, `ota update [--force]`, `ota cancel`; прогрес на OLED.
+- Відкат: нова прошивка підтверджується лише після успішного самотесту й збігу ролі, інакше
+  пристрій повертається на попередню; про відкат пишеться в системний лог.
+- `scripts/ota_server.py` — локальний сервер оновлень для розробки й демо відкату.
+
+### Виправлено
+- Хибний збій самотесту `oled` після швидкого скидання: дисплей опитується до 5 разів.
+
+### Змінено
+- Підменю «Логи» перейменовано на «Сервіс»: Передати по Wi-Fi / Оновити прошивку / Стерти
+  логи / Назад.
+
 ## [0.2.0] - 2026-10-04
 
 ### Додано
@@ -59,6 +77,7 @@
   вимірювання, тест частот, лог на LittleFS, вивантаження по Wi-Fi), переглядач логів,
   скрипти waterfall для RTL-SDR.
 
-[Unreleased]: https://github.com/RomanLobach/GF_Course/compare/hw6-v0.2.0...hw6
+[Unreleased]: https://github.com/RomanLobach/GF_Course/compare/hw6-v0.3.0...hw6
+[0.3.0]: https://github.com/RomanLobach/GF_Course/releases/tag/hw6-v0.3.0
 [0.2.0]: https://github.com/RomanLobach/GF_Course/releases/tag/hw6-v0.2.0
 [0.1.0]: https://github.com/RomanLobach/GF_Course/releases/tag/hw6-v0.1.0

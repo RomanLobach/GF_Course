@@ -30,10 +30,10 @@ void formatProfileLabel(const uint8_t profile, char *out, const size_t outLen) {
 }
 
 const char *const MAIN_LABELS[MenuItems::MAIN_COUNT] = {
-  "Синхронізація", "Вимірювання", "Тест частот", "Логи", "Вийти",
+  "Синхронізація", "Вимірювання", "Тест частот", "Сервіс", "Вийти",
 };
-const char *const LOGS_LABELS[MenuItems::LOGS_COUNT] = {
-  "Передати по Wi-Fi", "Стерти логи", "Назад",
+const char *const SERVICE_LABELS[MenuItems::SERVICE_COUNT] = {
+  "Передати по Wi-Fi", "Оновити прошивку", "Стерти логи", "Назад",
 };
 
 const char *suffixText(const MenuItems::Suffix s) {
@@ -170,7 +170,7 @@ void Display::renderMenu(const DisplaySnapshot &snap) {
 
   for (uint8_t i = 0; i < snap.menuCount; i++) {
     const int y = y0 + i * rowH;
-    String label(main ? MAIN_LABELS[i] : LOGS_LABELS[i]);
+    String label(main ? MAIN_LABELS[i] : SERVICE_LABELS[i]);
     label += suffixText(snap.menuSuffix[i]);
 
     oled_.setDrawColor(1);
@@ -247,6 +247,14 @@ void Display::renderWifi(const DisplaySnapshot &snap) {
   }
 }
 
+void Display::renderOta(const DisplaySnapshot &snap) {
+  renderWifi(snap); // same two text lines
+  if (snap.otaPercent < 0) return;
+  constexpr int x = 14, y = 50, w = Config::OLED_WIDTH - 2 * x, h = 6;
+  oled_.drawFrame(x, y, w, h);
+  oled_.drawBox(x + 1, y + 1, (w - 2) * snap.otaPercent / 100, h - 2);
+}
+
 void Display::render(const DisplaySnapshot &snap) {
   oled_.clearBuffer();
   switch (snap.screen) {
@@ -255,6 +263,7 @@ void Display::render(const DisplaySnapshot &snap) {
     case AppScreen::ConfirmDelete: renderConfirm(snap); break;
     case AppScreen::Popup: renderPopup(snap.text); break;
     case AppScreen::WifiScreen: renderWifi(snap); break;
+    case AppScreen::OtaScreen: renderOta(snap); break;
   }
   oled_.sendBuffer();
 }

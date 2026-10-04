@@ -25,6 +25,7 @@
 #include "SystemCommands.h"
 #include "ConfigStore.h"
 #include "Post.h"
+#include "Ota.h"
 
 namespace {
 QueueHandle_t g_uiEventQueue;
@@ -36,7 +37,8 @@ ConfigStore g_config;
 SessionState g_session(g_radio, g_flashLog, g_config);
 Console g_console;
 WifiOffload g_wifiOffload(g_flashLog, g_session, g_console);
-MenuController g_menu(g_session, g_flashLog, g_wifiOffload, g_radio);
+Ota g_ota(g_wifiOffload, g_radio, g_session, g_config);
+MenuController g_menu(g_session, g_flashLog, g_wifiOffload, g_radio, g_ota);
 
 // Runs alone: only touches Encoder + g_uiEventQueue. Strictly higher priority than
 // displayTaskFunc so a render's I2C transfer never delays a poll() call - a missed poll
@@ -123,11 +125,14 @@ void setup() {
   // Before the UI tasks: POST probes the OLED on I2C while nobody else owns the bus.
   Post::run({radioOk, g_radio.chipVersion(), sysLogOk && flashLogOk, nvsOk, g_config.healthy()});
   logSelfTest();
+  // A freshly updated image is accepted here or rolled back (reboots, never returns).
+  Ota::confirmBoot(Post::result().mask == 0);
   char selfTest[sizeof(DisplaySnapshot::text)];
   Post::describe(selfTest, sizeof(selfTest));
   g_menu.showSelfTest(selfTest, Post::result().mask != 0);
 
   SystemCommands::registerAll(g_console, g_config);
+  g_ota.registerCommands(g_console);
 
   xTaskCreatePinnedToCore(inputTaskFunc, "input", Config::UI_TASK_STACK_WORDS, nullptr,
                           Config::UI_TASK_PRIORITY, nullptr, Config::UI_TASK_CORE);
@@ -143,6 +148,7 @@ void loop() {
 
   g_session.update();
   g_menu.tick();
+  g_ota.loopTask();
   g_console.loopTask();
   // No flash I/O inside a burst window.
   const bool allowFlashIo = !g_session.isTimeCritical();

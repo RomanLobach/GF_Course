@@ -1,7 +1,7 @@
 // Menu pages, availability rules, popups and the delete-confirm dialog.
 //
 // Owned by and only ever called from the radio/protocol core (main loop()) - it talks to
-// SessionState/FlashLog/WifiOffload/RadioManager directly and produces DisplaySnapshot
+// SessionState/FlashLog/WifiOffload/RadioManager/Ota directly and produces DisplaySnapshot
 // values for the display task. Never touches Display/Encoder.
 #pragma once
 
@@ -11,10 +11,11 @@
 #include "FlashLog.h"
 #include "WifiOffload.h"
 #include "RadioManager.h"
+#include "Ota.h"
 
 class MenuController {
 public:
-  MenuController(SessionState &session, FlashLog &log, WifiOffload &wifi, RadioManager &radio);
+  MenuController(SessionState &session, FlashLog &log, WifiOffload &wifi, RadioManager &radio, Ota &ota);
 
   void handleEvent(const UiEvent &event);
   // Every main-loop iteration: popup timers, Wi-Fi progress, SessionState notices -> popups.
@@ -30,6 +31,7 @@ private:
   FlashLog &log_;
   WifiOffload &wifi_;
   RadioManager &radio_;
+  Ota &ota_;
 
   bool menuOpen_ = false;
   MenuItems::Page page_ = MenuItems::Page::Main;
@@ -50,7 +52,7 @@ private:
   const char *unavailableMessage(MenuItems::Page page, uint8_t index) const;
   void selectItem(uint8_t index);
   void selectMain(uint8_t index);
-  void selectLogs(uint8_t index);
+  void selectService(uint8_t index);
   void showPopup(const char *text, bool sticky = false);
   void closeMenu();
   static const char *noticeText(SessionState::Notice n);

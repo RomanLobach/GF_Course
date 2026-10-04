@@ -11,19 +11,20 @@
 namespace MenuItems {
 constexpr uint8_t MAX_ITEMS = 5;
 
-enum class Page : uint8_t { Main, Logs };
+enum class Page : uint8_t { Main, Service };
 
 constexpr uint8_t MAIN_COUNT = 5;
 constexpr uint8_t Sync = 0;
 constexpr uint8_t Measure = 1;
 constexpr uint8_t Test = 2;
-constexpr uint8_t Logs = 3;
+constexpr uint8_t Service = 3;
 constexpr uint8_t Exit = 4;
 
-constexpr uint8_t LOGS_COUNT = 3;
-constexpr uint8_t LogsWifi = 0;
-constexpr uint8_t LogsErase = 1;
-constexpr uint8_t LogsBack = 2;
+constexpr uint8_t SERVICE_COUNT = 4;
+constexpr uint8_t ServiceWifi = 0;
+constexpr uint8_t ServiceUpdate = 1;
+constexpr uint8_t ServiceErase = 2;
+constexpr uint8_t ServiceBack = 3;
 
 // What follows the label: "[почати]", "[X]", "›"...
 enum class Suffix : uint8_t { None, Start, Finish, Stop, Unavailable, Submenu };
@@ -35,6 +36,7 @@ enum class AppScreen : uint8_t {
   ConfirmDelete,
   Popup,
   WifiScreen,
+  OtaScreen,
 };
 
 struct UiEvent {
@@ -78,6 +80,9 @@ struct DisplaySnapshot {
   // Confirm-delete dialog
   uint8_t confirmIndex = 0; // 0 = "Ні", 1 = "Так"
 
-  // Popup / Wi-Fi screen free text (UTF-8)
+  // Firmware update screen: download progress, -1 = no bar
+  int8_t otaPercent = -1;
+
+  // Popup / Wi-Fi / update screen free text (UTF-8)
   char text[96] = {};
 };

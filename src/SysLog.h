@@ -40,6 +40,8 @@ static_assert(sizeof(Record) == 64, "SysLog::Record is a 64-byte on-flash slot")
 
 bool begin(); // mounts LittleFS, opens/creates the file, recovers seq and boot id
 void loopTask(bool allowFlashIo);
+// Write everything still in RAM to the file right now (before an intentional reboot).
+void sync();
 
 void log(LogLevel level, const char *tag, const char *fmt, ...) __attribute__((format(printf, 3, 4)));
 void setLevel(LogLevel level);

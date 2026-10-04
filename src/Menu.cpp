@@ -1,4 +1,5 @@
 #include "Menu.h"
+#include "SysLog.h"
 #include <cstring>
 
 using MenuItems::Page;
@@ -9,11 +10,11 @@ namespace {
 bool isRun(const DeviceState s) { return s == DeviceState::Measuring || s == DeviceState::Testing; }
 } // namespace
 
-MenuController::MenuController(SessionState &session, FlashLog &log, WifiOffload &wifi, RadioManager &radio)
-  : session_(session), log_(log), wifi_(wifi), radio_(radio) {}
+MenuController::MenuController(SessionState &session, FlashLog &log, WifiOffload &wifi, RadioManager &radio, Ota &ota)
+  : session_(session), log_(log), wifi_(wifi), radio_(radio), ota_(ota) {}
 
 uint8_t MenuController::itemCount() const {
-  return page_ == Page::Main ? MenuItems::MAIN_COUNT : MenuItems::LOGS_COUNT;
+  return page_ == Page::Main ? MenuItems::MAIN_COUNT : MenuItems::SERVICE_COUNT;
 }
 
 Suffix MenuController::suffixFor(const Page page, const uint8_t index) const {
@@ -28,16 +29,17 @@ Suffix MenuController::suffixFor(const Page page, const uint8_t index) const {
       case MenuItems::Test:
         if (st == DeviceState::Testing) return Suffix::Finish;
         return st == DeviceState::Synced && !session_.isStartPending() ? Suffix::Start : Suffix::Unavailable;
-      case MenuItems::Logs:
+      case MenuItems::Service:
         return Suffix::Submenu;
       default:
         return Suffix::None;
     }
   }
   switch (index) {
-    case MenuItems::LogsWifi:
+    case MenuItems::ServiceWifi:
+    case MenuItems::ServiceUpdate:
       return st == DeviceState::Idle ? Suffix::None : Suffix::Unavailable;
-    case MenuItems::LogsErase:
+    case MenuItems::ServiceErase:
       return isRun(st) ? Suffix::Unavailable : Suffix::None;
     default:
       return Suffix::None;
@@ -52,7 +54,7 @@ const char *MenuController::unavailableMessage(const Page page, const uint8_t in
     if (index == MenuItems::Test && st == DeviceState::Measuring) return "Спершу зупиніть вимірювання";
     return "Не можу почати: немає синхронізації";
   }
-  if (index == MenuItems::LogsWifi) return "Спершу завершіть синхронізацію";
+  if (index == MenuItems::ServiceWifi || index == MenuItems::ServiceUpdate) return "Спершу завершіть синхронізацію";
   return "Недоступно під час вимірювання";
 }
 
@@ -79,7 +81,7 @@ void MenuController::selectItem(const uint8_t index) {
   if (page_ == Page::Main) {
     selectMain(index);
   } else {
-    selectLogs(index);
+    selectService(index);
   }
 }
 
@@ -135,8 +137,8 @@ void MenuController::selectMain(const uint8_t index) {
       break;
     }
 
-    case MenuItems::Logs:
-      page_ = Page::Logs;
+    case MenuItems::Service:
+      page_ = Page::Service;
       menuIndex_ = 0;
       return; // stay in the menu
 
@@ -147,21 +149,27 @@ void MenuController::selectMain(const uint8_t index) {
   closeMenu();
 }
 
-void MenuController::selectLogs(const uint8_t index) {
+void MenuController::selectService(const uint8_t index) {
   switch (index) {
-    case MenuItems::LogsWifi:
+    case MenuItems::ServiceWifi:
       radio_.pause();
       wifi_.start();
       wifiScreenActive_ = true;
       break;
-    case MenuItems::LogsErase:
+    case MenuItems::ServiceUpdate:
+      if (const char *err = ota_.start(true, false)) {
+        SLOG_W("ota", "%s", err);
+        showPopup("Оновлення зараз недоступне");
+      }
+      break;
+    case MenuItems::ServiceErase:
       confirmDelete_ = true;
       confirmIndex_ = 0; // "Ні" pre-selected
       return;
-    case MenuItems::LogsBack:
+    case MenuItems::ServiceBack:
     default:
       page_ = Page::Main;
-      menuIndex_ = MenuItems::Logs;
+      menuIndex_ = MenuItems::Service;
       return;
   }
   closeMenu();
@@ -169,6 +177,12 @@ void MenuController::selectLogs(const uint8_t index) {
 
 void MenuController::handleEvent(const UiEvent &event) {
   const bool press = event.type == UiEvent::Type::ShortPress;
+
+  // The update screen covers everything; a press cancels it (until the image is in).
+  if (ota_.active()) {
+    if (press) ota_.cancel();
+    return;
+  }
 
   if (wifiScreenActive_) {
     if (press) {
@@ -260,6 +274,9 @@ void MenuController::tick() {
     showPopup("Wi-Fi недоступний");
   }
 
+  char otaResult[sizeof(popupText_)];
+  if (ota_.popResult(otaResult, sizeof(otaResult))) showPopup(otaResult, true);
+
   SessionState::Notice n;
   while (session_.popNotice(n)) {
     showPopup(noticeText(n)); // the newest result wins the popup
@@ -291,6 +308,13 @@ DisplaySnapshot MenuController::buildSnapshot() const {
   snap.runSnr = rv.snr;
   snap.logFull = snap.state == DeviceState::Testing && !log_.canLogTest();
 
+  if (ota_.active()) {
+    snap.screen = AppScreen::OtaScreen;
+    snap.wifi = true;
+    snap.otaPercent = ota_.percent();
+    ota_.screenText(snap.text, sizeof(snap.text));
+    return snap;
+  }
   if (wifiScreenActive_) {
     snap.screen = AppScreen::WifiScreen;
     wifi_.statusText().toCharArray(snap.text, sizeof(snap.text));

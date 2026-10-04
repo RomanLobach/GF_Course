@@ -25,8 +25,17 @@ uint16_t readBatteryMv() {
 
 bool oledAcks() {
   Wire.begin(Config::PIN_OLED_SDA, Config::PIN_OLED_SCL, Config::OLED_I2C_CLOCK_HZ);
-  Wire.beginTransmission(Config::OLED_I2C_ADDR);
-  const bool ack = Wire.endTransmission() == 0;
+  // Right after a fast reset the SSD1306 sometimes isn't answering yet (seen as a false "oled"
+  // failure on ~1 boot in 4) - give it a few tries. setup() only, before the protocol runs.
+  bool ack = false;
+  for (uint32_t i = 0; i < Config::POST_OLED_PROBE_TRIES && !ack; i++) {
+    if (i > 0) {
+      delay(Config::POST_OLED_PROBE_GAP_MS);
+      SLOG_D("post", "oled probe retry %u", static_cast<unsigned>(i));
+    }
+    Wire.beginTransmission(Config::OLED_I2C_ADDR);
+    ack = Wire.endTransmission() == 0;
+  }
   // Release the bus: Display::begin() installs the I2C driver again from the display task,
   // so its interrupt lands on the UI core, not on the protocol core that runs this.
   Wire.end();

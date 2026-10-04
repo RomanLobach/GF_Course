@@ -144,6 +144,16 @@ void loopTask(const bool allowFlashIo) {
   }
 }
 
+void sync() {
+  if (!g_ready) return;
+  loopTask(true);
+  if (g_dirty) {
+    g_file.flush();
+    g_dirty = false;
+    g_lastFlushMs = millis();
+  }
+}
+
 void setLevel(const LogLevel level) { g_level = level; }
 LogLevel level() { return g_level; }
 

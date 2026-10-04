@@ -176,12 +176,27 @@ constexpr size_t OTA_URL_MAX = 128;
 constexpr auto OTA_DEFAULT_MANIFEST_URL =
   "https://github.com/RomanLobach/GF_Course/releases/download/hw6-latest/manifest.json";
 
+// ---- Firmware update (see Ota.h) ----
+// The download runs in its own task (TLS + HTTP block for seconds), on the protocol core at
+// loop()'s priority so the two share the CPU by time slicing; the radio is paused meanwhile.
+constexpr uint32_t OTA_TASK_STACK_BYTES = 12288;
+constexpr UBaseType_t OTA_TASK_PRIORITY = 1;
+constexpr BaseType_t OTA_TASK_CORE = 1;
+constexpr size_t OTA_CHUNK_BYTES = 4096;        // one Update.write() per chunk
+constexpr uint32_t OTA_HTTP_TIMEOUT_MS = 15000; // connect / no data
+constexpr uint32_t OTA_REBOOT_DELAY_MS = 2000;  // lets the reply and the log get out first
+// Role pinned at the first boot (an image of the other role is rolled back) + the last
+// rollback already reported.
+constexpr auto DEV_NVS_NAMESPACE = "ttgo_dev";
+
 // ---- Power-on self-test (see Post.h) ----
 constexpr int PIN_BATTERY_ADC = 35;          // battery through a 1:2 divider
 constexpr uint32_t BATTERY_DIVIDER = 2;
 // Below ABSENT there is no battery on the divider (USB only) - that's fine, not a failure.
 constexpr uint32_t POST_BATT_ABSENT_MV = 1500;
 constexpr uint32_t POST_BATT_MIN_MV = 3300;  // LiPo nearly empty - radio TX may brown out
+constexpr uint32_t POST_OLED_PROBE_TRIES = 5;   // I2C ACK attempts before "oled" fails
+constexpr uint32_t POST_OLED_PROBE_GAP_MS = 20;
 
 // ---- UI tasks (core split) ----
 // radio/protocol stays on the default loop() core (1); encoder/button polling
