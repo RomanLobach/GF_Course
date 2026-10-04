@@ -6,6 +6,8 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-04
+
 ### Додано
 - Конфігурація в NVS: версійований blob у двох слотах (A/B) з CRC32 і лічильником поколінь —
   запис іде в неактивний слот, тож обрив живлення не губить останні робочі значення; межі
@@ -57,5 +59,6 @@
   вимірювання, тест частот, лог на LittleFS, вивантаження по Wi-Fi), переглядач логів,
   скрипти waterfall для RTL-SDR.
 
-[Unreleased]: https://github.com/RomanLobach/GF_Course/compare/hw6-v0.1.0...hw6
+[Unreleased]: https://github.com/RomanLobach/GF_Course/compare/hw6-v0.2.0...hw6
+[0.2.0]: https://github.com/RomanLobach/GF_Course/releases/tag/hw6-v0.2.0
 [0.1.0]: https://github.com/RomanLobach/GF_Course/releases/tag/hw6-v0.1.0
