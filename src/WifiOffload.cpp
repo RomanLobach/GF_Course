@@ -3,32 +3,7 @@
 #include "SysLog.h"
 #include "Version.h"
 #include "Post.h"
-
-namespace {
-// Print adapter that streams into a chunked HTTP response in small blocks.
-class HttpPrint : public Print {
-public:
-  explicit HttpPrint(WebServer &server) : server_(server) {}
-  ~HttpPrint() override { flush(); }
-
-  size_t write(const uint8_t c) override {
-    buf_[len_++] = static_cast<char>(c);
-    if (len_ == sizeof(buf_) - 1) flush();
-    return 1;
-  }
-  void flush() override {
-    if (len_ == 0) return;
-    buf_[len_] = '\0';
-    server_.sendContent(buf_, len_);
-    len_ = 0;
-  }
-
-private:
-  WebServer &server_;
-  char buf_[256]{};
-  size_t len_ = 0;
-};
-} // namespace
+#include "HttpPrint.h"
 
 WifiOffload::WifiOffload(FlashLog &log, SessionState &session, Console &console)
   : log_(log), session_(session), console_(console) {}
@@ -40,6 +15,13 @@ void WifiOffload::tryNextCredential() {
   // No SSID in the log: /syslog is readable by anyone on the network.
   SLOG_I("wifi", "connecting to network #%u (%s)", static_cast<unsigned>(credentialIndex_ + 1),
          credentialIndex_ < savedCount_ ? "saved" : "built-in");
+}
+
+bool WifiOffload::hasNetworks() {
+  for (const auto &cred : Config::WIFI_CREDENTIALS) {
+    if (cred.ssid[0] != '\0') return true;
+  }
+  return WifiStore::count() > 0;
 }
 
 void WifiOffload::start() {

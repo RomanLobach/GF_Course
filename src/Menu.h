@@ -1,7 +1,7 @@
 // Menu pages, availability rules, popups and the delete-confirm dialog.
 //
 // Owned by and only ever called from the radio/protocol core (main loop()) - it talks to
-// SessionState/FlashLog/WifiOffload/RadioManager/Ota directly and produces DisplaySnapshot
+// SessionState/FlashLog/WifiOffload/WifiPortal/RadioManager/Ota directly and produces DisplaySnapshot
 // values for the display task. Never touches Display/Encoder.
 #pragma once
 
@@ -12,10 +12,12 @@
 #include "WifiOffload.h"
 #include "RadioManager.h"
 #include "Ota.h"
+#include "WifiPortal.h"
 
 class MenuController {
 public:
-  MenuController(SessionState &session, FlashLog &log, WifiOffload &wifi, RadioManager &radio, Ota &ota);
+  MenuController(SessionState &session, FlashLog &log, WifiOffload &wifi, RadioManager &radio, Ota &ota,
+                 WifiPortal &portal);
 
   void handleEvent(const UiEvent &event);
   // Every main-loop iteration: popup timers, Wi-Fi progress, SessionState notices -> popups.
@@ -32,6 +34,7 @@ private:
   WifiOffload &wifi_;
   RadioManager &radio_;
   Ota &ota_;
+  WifiPortal &portal_;
 
   bool menuOpen_ = false;
   MenuItems::Page page_ = MenuItems::Page::Main;
@@ -53,6 +56,8 @@ private:
   void selectItem(uint8_t index);
   void selectMain(uint8_t index);
   void selectService(uint8_t index);
+  void openPortal();
+  void closePortal();
   void showPopup(const char *text, bool sticky = false);
   void closeMenu();
   static const char *noticeText(SessionState::Notice n);

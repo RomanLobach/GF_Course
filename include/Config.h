@@ -165,6 +165,12 @@ constexpr uint32_t WIFI_CONNECT_TIMEOUT_MS = 8000;
 // built-in ones - release images carry no secrets.h, so this is how they get Wi-Fi at all.
 constexpr auto WIFI_NVS_NAMESPACE = "ttgo_wifi";
 constexpr size_t WIFI_STORED_MAX = 4;
+// Setup portal (see WifiPortal.h): WPA2 access point "<prefix><deviceId>" with a fresh random
+// password per opening, shown on the OLED; closes by itself after this long without a request.
+constexpr auto PORTAL_AP_PREFIX = "ttgo-lora-bench-";
+constexpr size_t PORTAL_PASSWORD_LEN = 8;
+constexpr uint32_t PORTAL_IDLE_TIMEOUT_MS = 10UL * 60 * 1000;
+constexpr size_t PORTAL_SCAN_MAX = 12; // networks listed on the page, strongest first
 
 // ---- Persistent config (NVS, see ConfigStore.h) ----
 // Versioned blob in two slots (A/B) + CRC32; written only when a value changes.

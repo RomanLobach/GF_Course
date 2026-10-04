@@ -338,6 +338,7 @@ void Ota::confirmBoot(const bool postOk) {
 const char *Ota::start(const bool install, const bool force) {
   if (active()) return "an update is already running";
   if (session_.state() != Protocol::DeviceState::Idle) return "only in IDLE - finish the sync first";
+  if (WiFiClass::getMode() & WIFI_AP) return "the Wi-Fi setup portal is open";
   const char *url = config_.get().otaUrl;
   if (url[0] == '\0') return "ota_url is empty";
 

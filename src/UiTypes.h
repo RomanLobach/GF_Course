@@ -9,7 +9,7 @@
 // Menu layout. Labels live on the display side (Display.cpp); the
 // protocol core only sends item indices and suffix codes.
 namespace MenuItems {
-constexpr uint8_t MAX_ITEMS = 5;
+constexpr uint8_t MAX_ITEMS = 6;
 
 enum class Page : uint8_t { Main, Service };
 
@@ -20,11 +20,13 @@ constexpr uint8_t Test = 2;
 constexpr uint8_t Service = 3;
 constexpr uint8_t Exit = 4;
 
-constexpr uint8_t SERVICE_COUNT = 4;
+constexpr uint8_t SERVICE_COUNT = 6;
 constexpr uint8_t ServiceWifi = 0;
-constexpr uint8_t ServiceUpdate = 1;
-constexpr uint8_t ServiceErase = 2;
-constexpr uint8_t ServiceBack = 3;
+constexpr uint8_t ServicePortal = 1;
+constexpr uint8_t ServiceUpdate = 2;
+constexpr uint8_t ServiceVersion = 3;
+constexpr uint8_t ServiceErase = 4;
+constexpr uint8_t ServiceBack = 5;
 
 // What follows the label: "[почати]", "[X]", "›"...
 enum class Suffix : uint8_t { None, Start, Finish, Stop, Unavailable, Submenu };
@@ -37,6 +39,7 @@ enum class AppScreen : uint8_t {
   Popup,
   WifiScreen,
   OtaScreen,
+  PortalScreen,
 };
 
 struct UiEvent {
@@ -83,6 +86,6 @@ struct DisplaySnapshot {
   // Firmware update screen: download progress, -1 = no bar
   int8_t otaPercent = -1;
 
-  // Popup / Wi-Fi / update screen free text (UTF-8)
+  // Popup / Wi-Fi / update / portal screen free text (UTF-8, lines split by '\n')
   char text[96] = {};
 };

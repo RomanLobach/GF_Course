@@ -32,6 +32,8 @@ public:
   void start(); // begin trying the saved networks, then Config::WIFI_CREDENTIALS, in order
   void loopTask(); // call every main-loop iteration while phase() != Idle
   void stop();
+  // Any network to try at all (saved or built-in)?
+  static bool hasNetworks();
 
   Phase phase() const { return phase_; }
   String statusText() const;

@@ -33,7 +33,7 @@ const char *const MAIN_LABELS[MenuItems::MAIN_COUNT] = {
   "Синхронізація", "Вимірювання", "Тест частот", "Сервіс", "Вийти",
 };
 const char *const SERVICE_LABELS[MenuItems::SERVICE_COUNT] = {
-  "Передати по Wi-Fi", "Оновити прошивку", "Стерти логи", "Назад",
+  "Передати по Wi-Fi", "Налаштувати Wi-Fi", "Оновити прошивку", "Версія", "Стерти логи", "Назад",
 };
 
 const char *suffixText(const MenuItems::Suffix s) {
@@ -255,6 +255,19 @@ void Display::renderOta(const DisplaySnapshot &snap) {
   oled_.drawBox(x + 1, y + 1, (w - 2) * snap.otaPercent / 100, h - 2);
 }
 
+void Display::renderPortal(const DisplaySnapshot &snap) {
+  renderStatusBar(snap);
+  // Up to 4 lines: AP name, password, address, hint.
+  const String s(snap.text);
+  int pos = 0;
+  for (int i = 0; i < 4 && pos <= static_cast<int>(s.length()); i++) {
+    int nl = s.indexOf('\n', pos);
+    if (nl < 0) nl = s.length();
+    drawCentered(1, Config::OLED_WIDTH - 1, static_cast<int16_t>(17 + i * 11), s.substring(pos, nl).c_str());
+    pos = nl + 1;
+  }
+}
+
 void Display::render(const DisplaySnapshot &snap) {
   oled_.clearBuffer();
   switch (snap.screen) {
@@ -264,6 +277,7 @@ void Display::render(const DisplaySnapshot &snap) {
     case AppScreen::Popup: renderPopup(snap.text); break;
     case AppScreen::WifiScreen: renderWifi(snap); break;
     case AppScreen::OtaScreen: renderOta(snap); break;
+    case AppScreen::PortalScreen: renderPortal(snap); break;
   }
   oled_.sendBuffer();
 }

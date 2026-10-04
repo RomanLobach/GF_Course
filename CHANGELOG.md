@@ -6,6 +6,20 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-04
+
+### Додано
+- Налаштування Wi-Fi без кабелю: «Сервіс → Налаштувати Wi-Fi» піднімає точку доступу
+  `ttgo-lora-bench-XXXXXX` (WPA2, новий випадковий пароль щоразу; назва, пароль і адреса — на
+  OLED). На 192.168.4.1 — мережі поруч, форма пароля, збережені мережі з видаленням; телефон
+  відкриває сторінку сам (captive portal). Закривається натисканням або після 10 хв без запитів.
+- «Оновити прошивку» без жодної відомої мережі відкриває налаштування Wi-Fi.
+- Пункт «Сервіс → Версія»: версія, роль і hash збірки.
+
+### Змінено
+- Меню «Сервіс»: Передати по Wi-Fi / Налаштувати Wi-Fi / Оновити прошивку / Версія / Стерти
+  логи / Назад.
+
 ## [0.3.0] - 2026-10-04
 
 ### Додано
@@ -77,7 +91,8 @@
   вимірювання, тест частот, лог на LittleFS, вивантаження по Wi-Fi), переглядач логів,
   скрипти waterfall для RTL-SDR.
 
-[Unreleased]: https://github.com/RomanLobach/GF_Course/compare/hw6-v0.3.0...hw6
+[Unreleased]: https://github.com/RomanLobach/GF_Course/compare/hw6-v0.4.0...hw6
+[0.4.0]: https://github.com/RomanLobach/GF_Course/releases/tag/hw6-v0.4.0
 [0.3.0]: https://github.com/RomanLobach/GF_Course/releases/tag/hw6-v0.3.0
 [0.2.0]: https://github.com/RomanLobach/GF_Course/releases/tag/hw6-v0.2.0
 [0.1.0]: https://github.com/RomanLobach/GF_Course/releases/tag/hw6-v0.1.0

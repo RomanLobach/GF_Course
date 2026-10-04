@@ -26,6 +26,7 @@
 #include "ConfigStore.h"
 #include "Post.h"
 #include "Ota.h"
+#include "WifiPortal.h"
 
 namespace {
 QueueHandle_t g_uiEventQueue;
@@ -38,7 +39,8 @@ SessionState g_session(g_radio, g_flashLog, g_config);
 Console g_console;
 WifiOffload g_wifiOffload(g_flashLog, g_session, g_console);
 Ota g_ota(g_wifiOffload, g_radio, g_session, g_config);
-MenuController g_menu(g_session, g_flashLog, g_wifiOffload, g_radio, g_ota);
+WifiPortal g_wifiPortal;
+MenuController g_menu(g_session, g_flashLog, g_wifiOffload, g_radio, g_ota, g_wifiPortal);
 
 // Runs alone: only touches Encoder + g_uiEventQueue. Strictly higher priority than
 // displayTaskFunc so a render's I2C transfer never delays a poll() call - a missed poll

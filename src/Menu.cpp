@@ -1,4 +1,5 @@
 #include "Menu.h"
+#include "Version.h"
 #include "SysLog.h"
 #include <cstring>
 
@@ -10,8 +11,9 @@ namespace {
 bool isRun(const DeviceState s) { return s == DeviceState::Measuring || s == DeviceState::Testing; }
 } // namespace
 
-MenuController::MenuController(SessionState &session, FlashLog &log, WifiOffload &wifi, RadioManager &radio, Ota &ota)
-  : session_(session), log_(log), wifi_(wifi), radio_(radio), ota_(ota) {}
+MenuController::MenuController(SessionState &session, FlashLog &log, WifiOffload &wifi, RadioManager &radio, Ota &ota,
+                               WifiPortal &portal)
+  : session_(session), log_(log), wifi_(wifi), radio_(radio), ota_(ota), portal_(portal) {}
 
 uint8_t MenuController::itemCount() const {
   return page_ == Page::Main ? MenuItems::MAIN_COUNT : MenuItems::SERVICE_COUNT;
@@ -37,6 +39,7 @@ Suffix MenuController::suffixFor(const Page page, const uint8_t index) const {
   }
   switch (index) {
     case MenuItems::ServiceWifi:
+    case MenuItems::ServicePortal:
     case MenuItems::ServiceUpdate:
       return st == DeviceState::Idle ? Suffix::None : Suffix::Unavailable;
     case MenuItems::ServiceErase:
@@ -54,7 +57,9 @@ const char *MenuController::unavailableMessage(const Page page, const uint8_t in
     if (index == MenuItems::Test && st == DeviceState::Measuring) return "Спершу зупиніть вимірювання";
     return "Не можу почати: немає синхронізації";
   }
-  if (index == MenuItems::ServiceWifi || index == MenuItems::ServiceUpdate) return "Спершу завершіть синхронізацію";
+  if (index == MenuItems::ServiceWifi || index == MenuItems::ServicePortal || index == MenuItems::ServiceUpdate) {
+    return "Спершу завершіть синхронізацію";
+  }
   return "Недоступно під час вимірювання";
 }
 
@@ -156,12 +161,28 @@ void MenuController::selectService(const uint8_t index) {
       wifi_.start();
       wifiScreenActive_ = true;
       break;
+    case MenuItems::ServicePortal:
+      openPortal();
+      break;
     case MenuItems::ServiceUpdate:
+      if (!WifiOffload::hasNetworks()) {
+        // Nothing to connect to: the portal is the way to add a network first.
+        SLOG_I("ota", "no Wi-Fi networks saved, opening the setup portal");
+        openPortal();
+        break;
+      }
       if (const char *err = ota_.start(true, false)) {
         SLOG_W("ota", "%s", err);
         showPopup("Оновлення зараз недоступне");
       }
       break;
+    case MenuItems::ServiceVersion: {
+      char buf[sizeof(popupText_)];
+      snprintf(buf, sizeof(buf), "Прошивка %s %s %s%s", Version::FIRMWARE, Version::roleName(), Version::GIT_HASH,
+               Version::DIRTY ? "+dirty" : "");
+      showPopup(buf);
+      break;
+    }
     case MenuItems::ServiceErase:
       confirmDelete_ = true;
       confirmIndex_ = 0; // "Ні" pre-selected
@@ -175,12 +196,31 @@ void MenuController::selectService(const uint8_t index) {
   closeMenu();
 }
 
+void MenuController::openPortal() {
+  radio_.pause();
+  portal_.start();
+  if (!portal_.active()) {
+    radio_.resume();
+    showPopup("Не вдалося запустити точку доступу");
+  }
+}
+
+void MenuController::closePortal() {
+  portal_.stop();
+  radio_.resume();
+}
+
 void MenuController::handleEvent(const UiEvent &event) {
   const bool press = event.type == UiEvent::Type::ShortPress;
 
   // The update screen covers everything; a press cancels it (until the image is in).
   if (ota_.active()) {
     if (press) ota_.cancel();
+    return;
+  }
+
+  if (portal_.active()) {
+    if (press) closePortal();
     return;
   }
 
@@ -262,6 +302,11 @@ const char *MenuController::noticeText(const SessionState::Notice n) {
 
 void MenuController::tick() {
   wifi_.loopTask();
+  portal_.loopTask();
+  if (portal_.popTimedOut()) {
+    radio_.resume();
+    showPopup("Налаштування Wi-Fi закрито: немає активності");
+  }
 
   if (popupActive_ && !popupSticky_ && static_cast<int32_t>(millis() - popupUntilMs_) >= 0) {
     popupActive_ = false;
@@ -313,6 +358,12 @@ DisplaySnapshot MenuController::buildSnapshot() const {
     snap.wifi = true;
     snap.otaPercent = ota_.percent();
     ota_.screenText(snap.text, sizeof(snap.text));
+    return snap;
+  }
+  if (portal_.active()) {
+    snap.screen = AppScreen::PortalScreen;
+    snap.wifi = true;
+    portal_.screenText(snap.text, sizeof(snap.text));
     return snap;
   }
   if (wifiScreenActive_) {
