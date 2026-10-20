@@ -1,0 +1,15 @@
+[Unit]
+Description=GPS reader (u-blox M10 on /dev/ttyAMA0)
+After=multi-user.target
+
+[Service]
+Type=simple
+User=roman
+Group=dialout
+WorkingDirectory=/home/roman/gps-reader
+ExecStart=/usr/bin/python3 -u /home/roman/gps-reader/gps_reader.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
