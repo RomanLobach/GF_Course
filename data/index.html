@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ініціатор підриву</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 420px; margin: 0 auto; padding: 16px; background: #14181c; color: #e8eaed; }
+  h1 { font-size: 1.2rem; }
+  #state { font-size: 2rem; font-weight: 700; padding: 16px; border-radius: 8px; text-align: center; background: #2a3138; }
+  #state.SAFE { background: #1e5a2e; } #state.ARMING { background: #8a6d00; } #state.READY { background: #a85a00; }
+  #state.DISCHARGE { background: #a01c1c; } #state.FAULT { background: #6b1a6b; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; }
+  dt { color: #9aa0a6; } dd { margin: 0; text-align: right; }
+  button { width: 100%; padding: 14px; margin-top: 10px; font-size: 1.05rem; border: 0; border-radius: 8px; color: #fff; cursor: pointer; }
+  #start { background: #b88a00; } #stop { background: #2e7d32; } #discharge { background: #b71c1c; }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  #msg { min-height: 1.4em; margin-top: 12px; color: #9aa0a6; }
+  #test { background: #37474f; } #wdt { background: #4a148c; }
+  #banner { display: none; margin: 8px 0; padding: 8px; border-radius: 8px; background: #4a3b00; color: #ffd54f; text-align: center; font-weight: 600; }
+  details { margin-top: 16px; } summary { cursor: pointer; color: #9aa0a6; }
+  #log { font: 12px/1.5 ui-monospace, monospace; white-space: pre-wrap; color: #b0b6bc; }
+</style>
+</head>
+<body>
+<h1>Ініціатор підриву (симуляція)</h1>
+<div id="state">…</div>
+<div id="warn" style="display:none;margin:8px 0;padding:8px;border-radius:8px;background:#5c2a00;color:#ffb74d;text-align:center;font-weight:600">УВАГА: FIRE-сигнал був до взведення і ігнорується. Спрацювання не відбудеться, доки сигнал не зникне й не з’явиться знову.</div>
+<div id="banner">ТЕСТ-РЕЖИМ: вихід спрацювання вимкнено</div>
+<dl>
+  <dt>Таймер</dt><dd id="timer">—</dd>
+  <dt>Датчик</dt><dd id="sensor">—</dd>
+  <dt>Напруга 5 В</dt><dd id="vbus">—</dd>
+  <dt>Помилка</dt><dd id="fault">—</dd>
+</dl>
+<button id="start">Start — поставити на охорону</button>
+<button id="stop">Stop — зняти з охорони</button>
+<button id="explosion">Підрив (симуляція)</button>
+<button id="test">Тест-режим (без виходу)</button>
+<button id="wdt" style="display:none">Тест watchdog (зависання плати)</button>
+<div id="msg"></div>
+<details id="logbox"><summary>Журнал подій</summary><div id="log">натисніть, щоб завантажити</div></details>
+<script>
+const $ = id => document.getElementById(id);
+
+async function post(cmd) {
+  const r = await fetch('/api/cmd', { method: 'POST', body: new URLSearchParams({ cmd }) });
+  return r.json();
+}
+
+async function send(cmd) {
+  try {
+    let j = await post(cmd);
+    // Підрив — двокроково: плата чекає підтвердження, друга команда має прийти у вікні 5 с
+    if (j.ok && j.confirm) {
+      if (!confirm('Запустити симуляцію підриву?')) { $('msg').textContent = 'Скасовано'; return; }
+      j = await post(cmd);
+    }
+    $('msg').textContent = (j.ok ? '✔ ' : '✖ ') + j.msg;
+  } catch (e) { $('msg').textContent = '✖ немає зв’язку з платою'; }
+  refresh();
+}
+
+async function refresh() {
+  try {
+    const s = await (await fetch('/api/status', { cache: 'no-store' })).json();
+    $('state').textContent = s.state;
+    $('state').className = s.state;
+    $('timer').textContent = s.state === 'ARMING' ? Math.ceil(s.armRemainingMs / 1000) + ' с' : '—';
+    $('sensor').textContent = s.sensor + (s.duty >= 0 ? ' (' + s.duty + '%)' : '');
+    $('vbus').textContent = (s.vbusMv / 1000).toFixed(2) + ' В' + (s.vbusOk ? '' : ' ⚠');
+    $('fault').textContent = s.fault || (s.fireIgnored ? 'FIRE був до постановки — ігнорується' : '—');
+    $('warn').style.display = s.fireIgnored ? 'block' : 'none';
+    $('banner').style.display = s.test ? 'block' : 'none';
+    $('test').textContent = s.test ? 'Вийти з тест-режиму' : 'Тест-режим (без виходу)';
+    $('test').disabled = s.state !== 'SAFE';
+    $('wdt').style.display = s.test && s.state === 'SAFE' ? 'block' : 'none';
+    $('start').disabled = s.state !== 'SAFE';
+    $('explosion').disabled = s.state !== 'READY';
+    $('stop').disabled = s.state === 'SAFE';
+  } catch (e) { $('state').textContent = 'НЕМАЄ ЗВ’ЯЗКУ'; $('state').className = ''; }
+}
+
+$('start').onclick = () => send('start');
+$('stop').onclick = () => send('stop');
+$('explosion').onclick = () => send('discharge');
+$('test').onclick = () => send($('banner').style.display === 'block' ? 'stop' : 'test');
+$('wdt').onclick = () => { if (confirm('Плата зависне і перезавантажиться (стартує у FAULT). Продовжити?')) send('wdttest'); };
+
+async function loadLog() {
+  try {
+    const r = await fetch('/api/log', { cache: 'no-store' });
+    const j = await r.json();
+    if (!r.ok) { $('log').textContent = '✖ ' + j.msg; return; }
+    $('log').textContent = j.map(e => `#${e.seq} b${e.boot} ${(e.t / 1000).toFixed(1)}s ${e.type} ${e.from}→${e.to} ${e.text}`).join('\n') || 'порожньо';
+  } catch (e) { $('log').textContent = '✖ немає зв’язку'; }
+}
+$('logbox').addEventListener('toggle', () => { if ($('logbox').open) loadLog(); });
+refresh();
+setInterval(refresh, 1000);
+</script>
+</body>
+</html>
